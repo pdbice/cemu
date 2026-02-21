@@ -4,14 +4,15 @@ import "core:fmt"
 import "core:math"
 import sdl "vendor:sdl3"
 
-AUDIO_BUFFER_SIZE :: 1024
-AUDIO_SAMPLE_RATE :: 4400
-AUDIO_AMPLITUDE   :: 0.75
-AUDIO_FREQUENCY   :: 440
-DOUBLE_PI         :: 2.0 * math.PI
+AUDIO_BUFFER_LENGTH : i32 : 1000
+AUDIO_BUFFER_SIZE   : i32 : AUDIO_BUFFER_LENGTH * size_of(f32)
+AUDIO_SAMPLE_RATE   : f32 : 44100
+AUDIO_AMPLITUDE     : f32 : 0.75
+AUDIO_FREQUENCY     : f32 : 441
+DOUBLE_PI           : f32 : 2.0 * math.PI
 
 Audio :: struct {
-	buffer: [AUDIO_BUFFER_SIZE]f32,
+	buffer: [AUDIO_BUFFER_LENGTH]f32,
 	stream: ^sdl.AudioStream,
 }
 
@@ -19,7 +20,7 @@ init_audio :: proc(audio: ^Audio) -> bool {
 	audio_spec: sdl.AudioSpec = {
 		.F32,
 		1,
-		AUDIO_FREQUENCY,
+		i32(AUDIO_SAMPLE_RATE),
 	}
 	audio.stream = sdl.OpenAudioDeviceStream(sdl.AUDIO_DEVICE_DEFAULT_PLAYBACK, &audio_spec, nil, nil)
 	if audio.stream == nil {
@@ -40,6 +41,11 @@ init_audio :: proc(audio: ^Audio) -> bool {
 }
 
 play_audio :: proc(audio: ^Audio) {
-	sdl.PutAudioStreamData(audio.stream, rawptr(&audio.buffer), AUDIO_BUFFER_SIZE)
-	sdl.ResumeAudioStreamDevice(audio.stream)
+	if sdl.GetAudioStreamQueued(audio.stream) < AUDIO_BUFFER_SIZE {
+		sdl.PutAudioStreamData(audio.stream, &audio.buffer, AUDIO_BUFFER_SIZE)
+	}
+
+	if sdl.AudioStreamDevicePaused(audio.stream) {
+		sdl.ResumeAudioStreamDevice(audio.stream)
+	}
 }
