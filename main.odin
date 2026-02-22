@@ -3,6 +3,7 @@ package main
 import "core:fmt"
 import "core:mem"
 import "core:os"
+import sdl "vendor:sdl3"
 
 main :: proc() {
 	when ODIN_DEBUG {
