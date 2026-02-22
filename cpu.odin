@@ -155,8 +155,8 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			return
 		}
 		vm.v_registers[15] = 0
-		x_start := vm.v_registers[x_operand] & 63
-		pixel_y := vm.v_registers[y_operand] & 31
+		x_start := int(vm.v_registers[x_operand]) & 63
+		pixel_y := int(vm.v_registers[y_operand]) & 31
 		for sprite_index in vm.index_register..<vm.index_register + u16(n_operand) {
 			sprite_row := vm.ram[sprite_index]
 			shift_length: u8 = 7
