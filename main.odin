@@ -3,6 +3,7 @@ package main
 import "core:fmt"
 import "core:mem"
 import "core:os"
+import "core:time"
 import sdl "vendor:sdl3"
 
 main :: proc() {
@@ -58,11 +59,48 @@ main :: proc() {
 
 	if debug {
 	} else {
-		main_loop(rom, &video_display, &audio)
+		main_loop(rom, video_display, audio)
 	}
 }
 
-main_loop :: proc(rom: []u8, display: ^Video_Display, audio: ^Audio) {
+main_loop :: proc(rom: []u8, display: Video_Display, audio: Audio) {
+	vm: Virtual_Machine
+	load_rom(&vm, rom)
+
+	for {
+		frame_start := time.tick_now()
+
+		sdl_event: sdl.Event
+		window_resized := false
+
+		for sdl.PollEvent(&sdl_event) {
+			#partial switch sdl_event.type {
+			case .QUIT:
+				return
+			case .WINDOW_RESIZED:
+				window_resized = true
+			case .KEY_DOWN:
+				#partial switch sdl_event.key.scancode {
+				case .ESCAPE:
+					return
+				case .F4:
+					mem.zero(&vm, size_of(Virtual_Machine))
+					load_rom(&vm, rom)
+				}
+			}
+		}
+
+		update_keypad(&vm.keypad)
+		vm.vblank_interrupt = false
+
+		for instructions_per_frame in 0..<12 {
+			fetch_and_execute(&vm)
+		}
+
+		if vm.vblank_interrupt || window_resized {
+			draw_video_display(display, vm.framebuffer)
+		}
+	}
 }
 
 usage :: proc() {
