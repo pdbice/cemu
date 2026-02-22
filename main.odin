@@ -45,6 +45,15 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
+	if debug {
+	} else {
+		main_loop(rom)
+	}
+}
+
+FPS_60_TICKS : i64 : 16666667
+
+main_loop :: proc(rom: []u8) {
 	video_display: Video_Display
 	if !init_video_display(&video_display) {
 		return
@@ -57,13 +66,6 @@ main :: proc() {
 	}
 	defer sdl.DestroyAudioStream(audio.stream)
 
-	if debug {
-	} else {
-		main_loop(rom, video_display, audio)
-	}
-}
-
-main_loop :: proc(rom: []u8, display: Video_Display, audio: Audio) {
 	vm: Virtual_Machine
 	load_rom(&vm, rom)
 
@@ -97,10 +99,30 @@ main_loop :: proc(rom: []u8, display: Video_Display, audio: Audio) {
 			fetch_and_execute(&vm)
 		}
 
-		if vm.vblank_interrupt || window_resized {
-			draw_video_display(display, vm.framebuffer)
+		if vm.delay_timer > 0 {
+			vm.delay_timer -= 1
 		}
+		if vm.sound_timer > 0 {
+			vm.sound_timer -= 1
+			play_audio(&audio)
+		} else if !sdl.AudioStreamDevicePaused(audio.stream) {
+			sdl.PauseAudioStreamDevice(audio.stream)
+		}
+
+		if vm.vblank_interrupt || window_resized {
+			draw_video_display(video_display, vm.framebuffer)
+		}
+
+		wait(FPS_60_TICKS, frame_start)
 	}
+}
+
+wait :: proc(target: i64, start: time.Tick) -> i64 {
+	elapsed: i64
+	for elapsed < target {
+		elapsed = time.tick_now()._nsec - start._nsec
+	}
+	return elapsed
 }
 
 usage :: proc() {
