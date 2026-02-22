@@ -43,6 +43,26 @@ main :: proc() {
 		return
 	}
 	defer sdl.Quit()
+
+	video_display: Video_Display
+	if !init_video_display(&video_display) {
+		return
+	}
+	defer destroy_video_display(&video_display)
+
+	audio: Audio
+	if !init_audio(&audio) {
+		return
+	}
+	defer sdl.DestroyAudioStream(audio.stream)
+
+	if debug {
+	} else {
+		main_loop(rom, &video_display, &audio)
+	}
+}
+
+main_loop :: proc(rom: []u8, display: ^Video_Display, audio: ^Audio) {
 }
 
 usage :: proc() {
