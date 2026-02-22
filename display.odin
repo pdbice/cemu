@@ -44,11 +44,22 @@ destroy_video_display :: proc(display: ^Video_Display) {
 	sdl.DestroyWindow(display.window)
 }
 
+VIDEO_FOREGROUND : u32 : 0xFF808080
+VIDEO_BACKGROUND : u32 : 0xFF000000
+
 draw_video_display :: proc(display: Video_Display, framebuffer: [2048]u8) {
 	pitch: i32
 	pixels: [^]u32
 
 	sdl.LockTexture(display.texture, nil, cast(^rawptr)&pixels, &pitch)
+
+	for framebuffer_pixel, pixel_index in framebuffer {
+		if framebuffer_pixel == 1 {
+			pixels[pixel_index] = VIDEO_FOREGROUND
+		} else {
+			pixels[pixel_index] = VIDEO_BACKGROUND
+		}
+	}
 
 	sdl.UnlockTexture(display.texture)
 	sdl.RenderTexture(display.renderer, display.texture, nil, nil)
