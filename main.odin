@@ -24,6 +24,10 @@ main :: proc() {
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
+			case "-quirk:all":
+				quirks.vf_reset = true
+				quirks.shift = true
+				quirks.memory = true
 			case "-quirk:vf_reset":
 				quirks.vf_reset = true
 			case "-quirk:shift":
@@ -137,6 +141,7 @@ usage :: proc() {
 	fmt.println()
 	fmt.println("\tquirk:<quirk>")
 	fmt.println("\t\tEnables a quirk in the cpu")
+	fmt.println("\t\t\t-quirk:all\tEnables all quirks")
 	fmt.println("\t\t\t-quirk:vf_reset\tEnables the VF Reset quirk")
 	fmt.println("\t\t\t-quirk:shift\tEnables the shift quirk")
 	fmt.println("\t\t\t-quirk:memory\tEnables the memory quirk")
