@@ -8,12 +8,19 @@ Keypad :: struct {
 	key_released: bool,
 }
 
+Quirks :: struct {
+	vf_reset: bool,
+	shift:    bool,
+	memory:   bool,
+}
+
 Virtual_Machine :: struct {
 	ram:              [4096]u8,
 	framebuffer:      [2048]u8,
 	stack:            [12]u16,
 	keypad:           Keypad,
 	v_registers:      [16]u8,
+	quirks:           Quirks,
 	program_counter:  u16,
 	index_register:   u16,
 	stack_pointer:    u8,
@@ -102,13 +109,19 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] = vm.v_registers[y_operand]
 		case 0x1:
 			vm.v_registers[x_operand] |= vm.v_registers[y_operand]
-			vm.v_registers[15] = 0
+			if !vm.quirks.vf_reset {
+				vm.v_registers[15] = 0
+			}
 		case 0x2:
 			vm.v_registers[x_operand] &= vm.v_registers[y_operand]
-			vm.v_registers[15] = 0
+			if !vm.quirks.vf_reset {
+				vm.v_registers[15] = 0
+			}
 		case 0x3:
 			vm.v_registers[x_operand] ~= vm.v_registers[y_operand]
-			vm.v_registers[15] = 0
+			if !vm.quirks.vf_reset {
+				vm.v_registers[15] = 0
+			}
 		case 0x4:
 			vm.v_registers[x_operand] += vm.v_registers[y_operand]
 			if vm.v_registers[x_operand] < vm.v_registers[y_operand] {
@@ -124,8 +137,13 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] -= vm.v_registers[y_operand]
 			vm.v_registers[15] = math_flag
 		case 0x6:
-			math_flag = vm.v_registers[y_operand] & 1
-			vm.v_registers[x_operand] = vm.v_registers[y_operand] >> 1
+			if vm.quirks.shift {
+				math_flag = vm.v_registers[x_operand] & 1
+				vm.v_registers[x_operand] >>= 1
+			} else {
+				math_flag = vm.v_registers[y_operand] & 1
+				vm.v_registers[x_operand] = vm.v_registers[y_operand] >> 1
+			}
 			vm.v_registers[15] = math_flag
 		case 0x7:
 			math_flag = 1
@@ -135,8 +153,13 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] = vm.v_registers[y_operand] - vm.v_registers[x_operand]
 			vm.v_registers[15] = math_flag
 		case 0xE:
-			math_flag = vm.v_registers[y_operand] >> 7
-			vm.v_registers[x_operand] = vm.v_registers[y_operand] << 1
+			if vm.quirks.shift {
+				math_flag = vm.v_registers[x_operand] >> 7
+				vm.v_registers[x_operand] <<= 1
+			} else {
+				math_flag = vm.v_registers[y_operand] >> 7
+				vm.v_registers[x_operand] = vm.v_registers[y_operand] << 1
+			}
 			vm.v_registers[15] = math_flag
 		}
 	case 0x90:
@@ -216,10 +239,14 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.ram[vm.index_register] = bcd_value
 		case 0x55:
 			copy(vm.ram[vm.index_register:], vm.v_registers[:x_operand + 1])
-			vm.index_register += u16(x_operand) + 1
+			if !vm.quirks.memory {
+				vm.index_register += u16(x_operand) + 1
+			}
 		case 0x65:
 			copy(vm.v_registers[:], vm.ram[vm.index_register:][:x_operand + 1])
-			vm.index_register += u16(x_operand) + 1
+			if !vm.quirks.memory {
+				vm.index_register += u16(x_operand) + 1
+			}
 		}
 	}
 }

@@ -19,9 +19,17 @@ main :: proc() {
 		return
 	}
 
+	quirks: Quirks
+
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
+			case "-quirk:vf_reset":
+				quirks.vf_reset = true
+			case "-quirk:shift":
+				quirks.shift = true
+			case "-quirk:memory":
+				quirks.memory = true
 			case:
 				usage()
 				return
@@ -42,12 +50,12 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
-	main_loop(rom)
+	main_loop(rom, quirks)
 }
 
 FPS_60_TICKS : i64 : 16666667
 
-main_loop :: proc(rom: []u8) {
+main_loop :: proc(rom: []u8, quirks: Quirks) {
 	video_display: Video_Display
 	if !init_video_display(&video_display) {
 		return
@@ -62,6 +70,7 @@ main_loop :: proc(rom: []u8) {
 
 	vm: Virtual_Machine
 	load_rom(&vm, rom)
+	vm.quirks = quirks
 
 	for {
 		frame_start := time.tick_now()
@@ -82,6 +91,7 @@ main_loop :: proc(rom: []u8) {
 				case .F4:
 					mem.zero(&vm, size_of(Virtual_Machine))
 					load_rom(&vm, rom)
+					vm.quirks = quirks
 				}
 			}
 		}
@@ -125,6 +135,11 @@ usage :: proc() {
 	fmt.println()
 	fmt.println("\tFlags")
 	fmt.println()
+	fmt.println("\tquirk:<quirk>")
+	fmt.println("\t\tEnables a quirk in the cpu")
+	fmt.println("\t\t\t-quirk:vf_reset\tEnables the VF Reset quirk")
+	fmt.println("\t\t\t-quirk:shift\tEnables the shift quirk")
+	fmt.println("\t\t\t-quirk:memory\tEnables the memory quirk")
 	fmt.println()
 }
 
