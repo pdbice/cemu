@@ -19,12 +19,9 @@ main :: proc() {
 		return
 	}
 
-	debug := false
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
-			case "-debug":
-				debug = true
 			case:
 				usage()
 				return
@@ -45,10 +42,7 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
-	if debug {
-	} else {
-		main_loop(rom)
-	}
+	main_loop(rom)
 }
 
 FPS_60_TICKS : i64 : 16666667
@@ -131,8 +125,6 @@ usage :: proc() {
 	fmt.println()
 	fmt.println("\tFlags")
 	fmt.println()
-	fmt.println("\t-debug")
-	fmt.println("\t\tRun the emulator in debug mode")
 	fmt.println()
 }
 
