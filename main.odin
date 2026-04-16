@@ -41,8 +41,8 @@ main :: proc() {
 		}
 	}
 
-	rom, read_file_ok := os.read_entire_file_from_filename(os.args[1])
-	if !read_file_ok {
+	rom, read_file_err := os.read_entire_file_from_path(os.args[1], context.allocator)
+	if read_file_err != os.ERROR_NONE {
 		fmt.eprintfln("Could not read file %v", os.args[1])
 		return
 	}
