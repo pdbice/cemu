@@ -2,6 +2,19 @@ package main
 
 import "core:math/rand"
 
+Variant :: enum {
+	Superchip_Modern,
+	Superchip_Legacy,
+	Cosmic,
+}
+
+Display :: struct {
+	framebuffer:  [8192]u8,
+	width:        int,
+	height:       int,
+	scroll_width: int,
+}
+
 Keypad :: struct {
 	state:        [16]bool,
 	wait_key:     u8,
