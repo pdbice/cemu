@@ -70,6 +70,15 @@ load_rom :: proc(vm: ^Virtual_Machine, rom: []u8) {
 	copy(vm.ram[:], font[:])
 	copy(vm.ram[512:], rom[:])
 
+	vm.display.length = 2048
+	vm.display.width = 64
+	vm.display.height = 32
+	if vm.variant == .Superchip_Legacy {
+		vm.scroll_width = 2
+	} else {
+		vm.scroll_width = 4
+	}
+
 	vm.program_counter = 512
 }
 
