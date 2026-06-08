@@ -74,9 +74,9 @@ load_rom :: proc(vm: ^Virtual_Machine, rom: []u8) {
 	vm.display.width = 64
 	vm.display.height = 32
 	if vm.variant == .Superchip_Legacy {
-		vm.scroll_width = 2
+		vm.display.scroll_width = 2
 	} else {
-		vm.scroll_width = 4
+		vm.display.scroll_width = 4
 	}
 
 	vm.program_counter = 512
@@ -107,6 +107,38 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.stack_pointer -= 1
 			vm.program_counter = vm.stack[vm.stack_pointer]
 			vm.stack[vm.stack_pointer] = 0
+		case 0xFB:
+			scroll_right(&vm.display)
+		case 0xFC:
+			scroll_left(&vm.display)
+		case 0xFD:
+			vm.program_counter -= 2
+		case 0xFE:
+			vm.display.length = 2048
+			vm.display.width = 64
+			vm.display.height = 32
+			#partial switch vm.variant {
+			case .Superchip_Modern:
+				vm.display.framebuffer = 0
+			case .Superchip_Legacy:
+				vm.display.scroll_width = 2
+			}
+		case 0xFF:
+			vm.display.length = 8192
+			vm.display.width = 128
+			vm.display.height = 64
+			vm.display.scroll_width = 4
+			if vm.variant == .Superchip_Modern {
+				vm.display.framebuffer = 0
+			}
+		case:
+			if y_operand == 0xC {
+				if vm.variant == .Superchip_Legacy && vm.display.length == 2048 {
+					scroll_down(&vm.display, n_operand / 2)
+				} else {
+					scroll_down(&vm.display, n_operand)
+				}
+			}
 		}
 	case 0x10:
 		vm.program_counter = address_operand
@@ -276,4 +308,13 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			}
 		}
 	}
+}
+
+scroll_right :: proc(display: ^Display) {
+}
+
+scroll_left :: proc(display: ^Display) {
+}
+
+scroll_down :: proc(display: ^Display, rows: u8) {
 }
