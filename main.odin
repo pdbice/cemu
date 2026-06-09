@@ -25,11 +25,8 @@ main :: proc() {
 		for argument in os.args[2:] {
 			switch argument {
 			case "-quirk:all":
-				quirks.vf_reset = true
 				quirks.shift = true
 				quirks.memory = true
-			case "-quirk:vf_reset":
-				quirks.vf_reset = true
 			case "-quirk:shift":
 				quirks.shift = true
 			case "-quirk:memory":

@@ -24,7 +24,6 @@ Keypad :: struct {
 }
 
 Quirks :: struct {
-	vf_reset: bool,
 	shift:    bool,
 	memory:   bool,
 }
@@ -169,17 +168,17 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] = vm.v_registers[y_operand]
 		case 0x1:
 			vm.v_registers[x_operand] |= vm.v_registers[y_operand]
-			if !vm.quirks.vf_reset {
+			if vm.variant == .Cosmic {
 				vm.v_registers[15] = 0
 			}
 		case 0x2:
 			vm.v_registers[x_operand] &= vm.v_registers[y_operand]
-			if !vm.quirks.vf_reset {
+			if vm.variant == .Cosmic {
 				vm.v_registers[15] = 0
 			}
 		case 0x3:
 			vm.v_registers[x_operand] ~= vm.v_registers[y_operand]
-			if !vm.quirks.vf_reset {
+			if vm.variant == .Cosmic {
 				vm.v_registers[15] = 0
 			}
 		case 0x4:
