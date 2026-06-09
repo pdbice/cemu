@@ -23,10 +23,6 @@ Keypad :: struct {
 	key_released: bool,
 }
 
-Quirks :: struct {
-	memory: bool,
-}
-
 Virtual_Machine :: struct {
 	display:          Display,
 	ram:              [4096]u8,
@@ -35,7 +31,6 @@ Virtual_Machine :: struct {
 	keypad:           Keypad,
 	v_registers:      [16]u8,
 	variant:          Variant,
-	quirks:           Quirks,
 	program_counter:  u16,
 	index_register:   u16,
 	stack_pointer:    u8,
@@ -301,12 +296,12 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.ram[vm.index_register] = bcd_value
 		case 0x55:
 			copy(vm.ram[vm.index_register:], vm.v_registers[:x_operand + 1])
-			if !vm.quirks.memory {
+			if vm.variant == .Cosmic {
 				vm.index_register += u16(x_operand) + 1
 			}
 		case 0x65:
 			copy(vm.v_registers[:], vm.ram[vm.index_register:][:x_operand + 1])
-			if !vm.quirks.memory {
+			if vm.variant == .Cosmic {
 				vm.index_register += u16(x_operand) + 1
 			}
 		}

@@ -19,15 +19,17 @@ main :: proc() {
 		return
 	}
 
-	quirks: Quirks
+	variant: Variant
 
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
-			case "-quirk:all":
-				quirks.memory = true
-			case "-quirk:memory":
-				quirks.memory = true
+			case "-variant:modern":
+				variant = .Superchip_Modern
+			case "-variant:legacy":
+				variant = .Superchip_Legacy
+			case "-variant:cosmic":
+				variant = .Cosmic
 			case:
 				usage()
 				return
@@ -48,12 +50,12 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
-	main_loop(rom, quirks)
+	main_loop(rom, variant)
 }
 
 FPS_60_TICKS : i64 : 16666667
 
-main_loop :: proc(rom: []u8, quirks: Quirks) {
+main_loop :: proc(rom: []u8, variant: Variant) {
 	video_display: Video_Display
 	if !init_video_display(&video_display) {
 		return
@@ -68,7 +70,7 @@ main_loop :: proc(rom: []u8, quirks: Quirks) {
 
 	vm: Virtual_Machine
 	load_rom(&vm, rom)
-	vm.quirks = quirks
+	vm.variant = variant
 
 	for {
 		frame_start := time.tick_now()
@@ -89,7 +91,7 @@ main_loop :: proc(rom: []u8, quirks: Quirks) {
 				case .F4:
 					mem.zero(&vm, size_of(Virtual_Machine))
 					load_rom(&vm, rom)
-					vm.quirks = quirks
+					vm.variant = variant
 				}
 			}
 		}
