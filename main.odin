@@ -28,8 +28,8 @@ main :: proc() {
 				variant = .Superchip_Modern
 			case "-variant:legacy":
 				variant = .Superchip_Legacy
-			case "-variant:cosmic":
-				variant = .Cosmic
+			case "-variant:cosmac":
+				variant = .Cosmac
 			case:
 				usage()
 				return
@@ -135,12 +135,11 @@ usage :: proc() {
 	fmt.println()
 	fmt.println("\tFlags")
 	fmt.println()
-	fmt.println("\tquirk:<quirk>")
-	fmt.println("\t\tEnables a quirk in the cpu")
-	fmt.println("\t\t\t-quirk:all\tEnables all quirks")
-	fmt.println("\t\t\t-quirk:vf_reset\tEnables the VF Reset quirk")
-	fmt.println("\t\t\t-quirk:shift\tEnables the shift quirk")
-	fmt.println("\t\t\t-quirk:memory\tEnables the memory quirk")
+	fmt.println("\tvariant:<variant>")
+	fmt.println("\t\tSelects the Chip-8 variant to use")
+	fmt.println("\t\t\t-variant:modern\tThe modern interpretation of the Super Chip variant")
+	fmt.println("\t\t\t-variant:legacy\tThe super chip v1.1 variant")
+	fmt.println("\t\t\t-variant:cosmac\tThe Chip-8 variant used by the Cosmac VIP")
 	fmt.println()
 }
 

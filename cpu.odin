@@ -6,7 +6,7 @@ import "core:slice"
 Variant :: enum {
 	Superchip_Modern,
 	Superchip_Legacy,
-	Cosmic,
+	Cosmac,
 }
 
 Display :: struct {
@@ -162,17 +162,17 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] = vm.v_registers[y_operand]
 		case 0x1:
 			vm.v_registers[x_operand] |= vm.v_registers[y_operand]
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				vm.v_registers[15] = 0
 			}
 		case 0x2:
 			vm.v_registers[x_operand] &= vm.v_registers[y_operand]
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				vm.v_registers[15] = 0
 			}
 		case 0x3:
 			vm.v_registers[x_operand] ~= vm.v_registers[y_operand]
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				vm.v_registers[15] = 0
 			}
 		case 0x4:
@@ -190,7 +190,7 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] -= vm.v_registers[y_operand]
 			vm.v_registers[15] = math_flag
 		case 0x6:
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				math_flag = vm.v_registers[y_operand] & 1
 				vm.v_registers[x_operand] = vm.v_registers[y_operand] >> 1
 			} else {
@@ -206,7 +206,7 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] = vm.v_registers[y_operand] - vm.v_registers[x_operand]
 			vm.v_registers[15] = math_flag
 		case 0xE:
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				math_flag = vm.v_registers[y_operand] >> 7
 				vm.v_registers[x_operand] = vm.v_registers[y_operand] << 1
 			} else {
@@ -222,7 +222,7 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 	case 0xA0:
 		vm.index_register = address_operand
 	case 0xB0:
-		if vm.variant == .Cosmic {
+		if vm.variant == .Cosmac {
 			vm.program_counter = u16(vm.v_registers[0]) + address_operand
 		} else {
 			vm.program_counter = u16(vm.v_registers[x_operand]) + address_operand
@@ -296,12 +296,12 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.ram[vm.index_register] = bcd_value
 		case 0x55:
 			copy(vm.ram[vm.index_register:], vm.v_registers[:x_operand + 1])
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				vm.index_register += u16(x_operand) + 1
 			}
 		case 0x65:
 			copy(vm.v_registers[:], vm.ram[vm.index_register:][:x_operand + 1])
-			if vm.variant == .Cosmic {
+			if vm.variant == .Cosmac {
 				vm.index_register += u16(x_operand) + 1
 			}
 		}
