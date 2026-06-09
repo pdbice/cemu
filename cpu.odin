@@ -103,7 +103,7 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 		}
 		switch opcode_low {
 		case 0xE0:
-			vm.framebuffer = 0
+			vm.display.framebuffer = 0
 		case 0xEE:
 			vm.stack_pointer -= 1
 			vm.program_counter = vm.stack[vm.stack_pointer]
