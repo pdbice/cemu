@@ -1,6 +1,7 @@
 package main
 
 import "core:math/rand"
+import "core:slice"
 
 Variant :: enum {
 	Superchip_Modern,
@@ -311,10 +312,30 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 }
 
 scroll_right :: proc(display: ^Display) {
+	scroll_length := display.width - display.scroll_width
+	for row_start := 0; row_start < display.length; row_start += display.width {
+		copy(
+			display.framebuffer[row_start + display.scroll_width:],
+			display.framebuffer[row_start:][:scroll_length]
+		)
+		slice.zero(display.framebuffer[row_start:][:display.scroll_width])
+	}
 }
 
 scroll_left :: proc(display: ^Display) {
+	scroll_length := display.width - display.scroll_width
+	for row_start := 0; row_start < display.length; row_start += display.width {
+		copy(
+			display.framebuffer[row_start:],
+			display.framebuffer[row_start + display.scroll_width:][:scroll_length]
+		)
+		slice.zero(display.framebuffer[row_start + scroll_length:][:display.scroll_width])
+	}
 }
 
 scroll_down :: proc(display: ^Display, rows: u8) {
+	scroll_height := int(rows) * display.width
+	scroll_length := display.length - scroll_height
+	copy(display.framebuffer[scroll_height:], display.framebuffer[:scroll_length])
+	slice.zero(display.framebuffer[:scroll_height])
 }
