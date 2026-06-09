@@ -25,10 +25,7 @@ main :: proc() {
 		for argument in os.args[2:] {
 			switch argument {
 			case "-quirk:all":
-				quirks.shift = true
 				quirks.memory = true
-			case "-quirk:shift":
-				quirks.shift = true
 			case "-quirk:memory":
 				quirks.memory = true
 			case:

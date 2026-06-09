@@ -24,8 +24,7 @@ Keypad :: struct {
 }
 
 Quirks :: struct {
-	shift:    bool,
-	memory:   bool,
+	memory: bool,
 }
 
 Virtual_Machine :: struct {
@@ -196,12 +195,12 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] -= vm.v_registers[y_operand]
 			vm.v_registers[15] = math_flag
 		case 0x6:
-			if vm.quirks.shift {
-				math_flag = vm.v_registers[x_operand] & 1
-				vm.v_registers[x_operand] >>= 1
-			} else {
+			if vm.variant == .Cosmic {
 				math_flag = vm.v_registers[y_operand] & 1
 				vm.v_registers[x_operand] = vm.v_registers[y_operand] >> 1
+			} else {
+				math_flag = vm.v_registers[x_operand] & 1
+				vm.v_registers[x_operand] >>= 1
 			}
 			vm.v_registers[15] = math_flag
 		case 0x7:
@@ -212,12 +211,12 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.v_registers[x_operand] = vm.v_registers[y_operand] - vm.v_registers[x_operand]
 			vm.v_registers[15] = math_flag
 		case 0xE:
-			if vm.quirks.shift {
-				math_flag = vm.v_registers[x_operand] >> 7
-				vm.v_registers[x_operand] <<= 1
-			} else {
+			if vm.variant == .Cosmic {
 				math_flag = vm.v_registers[y_operand] >> 7
 				vm.v_registers[x_operand] = vm.v_registers[y_operand] << 1
+			} else {
+				math_flag = vm.v_registers[x_operand] >> 7
+				vm.v_registers[x_operand] <<= 1
 			}
 			vm.v_registers[15] = math_flag
 		}
