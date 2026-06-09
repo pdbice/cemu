@@ -227,7 +227,11 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 	case 0xA0:
 		vm.index_register = address_operand
 	case 0xB0:
-		vm.program_counter = u16(vm.v_registers[0]) + address_operand
+		if vm.variant == .Cosmic {
+			vm.program_counter = u16(vm.v_registers[0]) + address_operand
+		} else {
+			vm.program_counter = u16(vm.v_registers[x_operand]) + address_operand
+		}
 	case 0xC0:
 		vm.v_registers[x_operand] = u8(rand.uint32() % 256) & opcode_low
 	case 0xD0:
