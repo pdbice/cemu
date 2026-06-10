@@ -306,6 +306,8 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			if vm.variant == .Cosmac {
 				vm.index_register += u16(x_operand) + 1
 			}
+		case 0x75:
+		case 0x85:
 		}
 	}
 }
