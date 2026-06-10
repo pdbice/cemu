@@ -287,6 +287,8 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			vm.index_register += u16(vm.v_registers[x_operand])
 		case 0x29:
 			vm.index_register = u16(vm.v_registers[x_operand] & 0xF) * 5
+		case 0x30:
+			vm.index_register = u16(vm.v_registers[x_operand] & 0xF) * 10 + 80
 		case 0x33:
 			bcd_value := vm.v_registers[x_operand]
 			vm.ram[vm.index_register + 2] = bcd_value % 10
