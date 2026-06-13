@@ -230,33 +230,40 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 	case 0xC0:
 		vm.v_registers[x_operand] = u8(rand.uint32() % 256) & opcode_low
 	case 0xD0:
-		if vm.vblank_interrupt {
-			vm.program_counter -= 2
-			return
-		}
-		vm.v_registers[15] = 0
-		x_start := int(vm.v_registers[x_operand]) & 63
-		pixel_y := int(vm.v_registers[y_operand]) & 31
-		for sprite_index in vm.index_register..<vm.index_register + u16(n_operand) {
-			sprite_row := vm.ram[sprite_index]
-			shift_length: u8 = 7
-			framebuffer_index := pixel_y * 64 + x_start
-			for pixel_x in x_start..<x_start + 8 {
-				if pixel_x > 63 {
-					break
+		switch vm.variant {
+		case .Superchip_Modern:
+			if n_operand > 0 {
+				draw_8xN(vm, x_operand, y_operand, n_operand)
+			} else {
+				draw_16x16(vm, x_operand, y_operand)
+			}
+		case .Superchip_Legacy:
+			if vm.display.length == 2048 {
+				if vm.vblank_interrupt {
+					vm.program_counter -= 2
+					return
 				}
-				sprite_bit := (sprite_row >> shift_length) & 1
-				vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
-				vm.framebuffer[framebuffer_index] ~= sprite_bit
-				framebuffer_index += 1
-				shift_length -= 1
+				if n_operand > 0 {
+					draw_8xN(vm, x_operand, y_operand, n_operand)
+				} else {
+					draw_8x16(vm, x_operand, y_operand)
+				}
+				vm.vblank_interrupt = true
+			} else {
+				if n_operand > 0 {
+					draw_8xN_with_collision_count(vm, x_operand, y_operand, n_operand)
+				} else {
+					draw_16x16_with_collision_count(vm, x_operand, y_operand)
+				}
 			}
-			pixel_y += 1
-			if pixel_y > 31 {
-				break
+		case .Cosmac:
+			if vm.vblank_interrupt {
+				vm.program_counter -= 2
+				return
 			}
+			draw_8xN(vm, x_operand, y_operand, n_operand)
+			vm.vblank_interrupt = true
 		}
-		vm.vblank_interrupt = true
 	case 0xE0:
 		switch opcode_low {
 		case 0x9E:
@@ -339,4 +346,153 @@ scroll_down :: proc(display: ^Display, rows: u8) {
 	scroll_length := display.length - scroll_height
 	copy(display.framebuffer[scroll_height:], display.framebuffer[:scroll_length])
 	slice.zero(display.framebuffer[:scroll_height])
+}
+
+draw_8xN :: proc(vm: ^Virtual_Machine, x_operand, y_operand, n_operand: u8) {
+	vm.v_registers[15] = 0
+
+	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+
+	for sprite_index in vm.index_register..<vm.index_register + u16(n_operand) {
+		sprite_row := vm.ram[sprite_index]
+		shift_length: u8 = 7
+		framebuffer_index := pixel_y * vm.display.width + x_start
+		for pixel_x in x_start..<x_start + 8 {
+			if pixel_x == vm.display.width {
+				break
+			}
+			sprite_bit := (sprite_row >> shift_length) & 1
+			vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
+			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			framebuffer_index += 1
+			shift_length -= 1
+		}
+		pixel_y += 1
+		if pixel_y == vm.display.height {
+			break
+		}
+	}
+}
+
+draw_8xN_with_collision_count :: proc(vm: ^Virtual_Machine, x_operand, y_operand, n_operand: u8) {
+	pixel_collision: u8
+	collision_count: u8
+	if vm.v_registers[y_operand] + n_operand > u8(vm.display.height) {
+		collision_count = vm.v_registers[y_operand] + n_operand - u8(vm.display.height)
+	}
+	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+
+	for sprite_index in vm.index_register..<vm.index_register + u16(n_operand) {
+		sprite_row := vm.ram[sprite_index]
+		shift_length: u8 = 7
+		framebuffer_index := pixel_y * vm.display.width + x_start
+		for pixel_x in x_start..<x_start + 8 {
+			if pixel_x == vm.display.width {
+				break
+			}
+			sprite_bit := (sprite_row >> shift_length) & 1
+			pixel_collision |= vm.framebuffer[framebuffer_index] & sprite_bit
+			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			framebuffer_index += 1
+			shift_length -= 1
+		}
+		collision_count += pixel_collision
+		pixel_collision = 0
+		pixel_y += 1
+		if pixel_y == vm.display.height {
+			break
+		}
+	}
+
+	vm.v_registers[15] = collision_count
+}
+
+draw_8x16 :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
+	vm.v_registers[15] = 0
+
+	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+
+	for sprite_index := vm.index_register; sprite_index < vm.index_register + 16; sprite_index += 2 {
+		sprite_row := vm.ram[sprite_index]
+		shift_length: u8 = 7
+		framebuffer_index := pixel_y * vm.display.width + x_start
+		for pixel_x in x_start..<x_start + 8 {
+			if pixel_x == vm.display.width {
+				break
+			}
+			sprite_bit := (sprite_row >> shift_length) & 1
+			vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
+			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			framebuffer_index += 1
+			shift_length -= 1
+		}
+		pixel_y += 1
+		if pixel_y == vm.display.height {
+			break
+		}
+	}
+}
+
+draw_16x16 :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
+	vm.v_registers[15] = 0
+
+	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+
+	for sprite_index := vm.index_register; sprite_index < vm.index_register + 16; sprite_index += 2 {
+		sprite_row: u16 = u16(vm.ram[sprite_index]) << 8 | u16(vm.ram[sprite_index + 1])
+		shift_length: u16 = 15
+		framebuffer_index := pixel_y * vm.display.width + x_start
+		for pixel_x in x_start..<x_start + 16 {
+			if pixel_x == vm.display.width {
+				break
+			}
+			sprite_bit := u8(sprite_row >> shift_length) & 1
+			vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
+			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			framebuffer_index += 1
+			shift_length -= 1
+		}
+		pixel_y += 1
+		if pixel_y == vm.display.height {
+			break
+		}
+	}
+}
+
+draw_16x16_with_collision_count :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
+	pixel_collision: u8
+	collision_count: u8
+	if vm.v_registers[y_operand] + 16 > u8(vm.display.height) {
+		collision_count = vm.v_registers[y_operand] + 16 - u8(vm.display.height)
+	}
+	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+
+	for sprite_index := vm.index_register; sprite_index < vm.index_register + 16; sprite_index += 2 {
+		sprite_row: u16 = u16(vm.ram[sprite_index]) << 8 | u16(vm.ram[sprite_index + 1])
+		shift_length: u16 = 15
+		framebuffer_index := pixel_y * vm.display.width + x_start
+		for pixel_x in x_start..<x_start + 16 {
+			if pixel_x == vm.display.width {
+				break
+			}
+			sprite_bit := u8(sprite_row >> shift_length) & 1
+			pixel_collision |= vm.framebuffer[framebuffer_index] & sprite_bit
+			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			framebuffer_index += 1
+			shift_length -= 1
+		}
+		collision_count += pixel_collision
+		pixel_collision = 0
+		pixel_y += 1
+		if pixel_y == vm.display.height {
+			break
+		}
+	}
+
+	vm.v_registers[15] = collision_count
 }
