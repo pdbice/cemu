@@ -76,14 +76,11 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 		frame_start := time.tick_now()
 
 		sdl_event: sdl.Event
-		window_resized := false
 
 		for sdl.PollEvent(&sdl_event) {
 			#partial switch sdl_event.type {
 			case .QUIT:
 				return
-			case .WINDOW_RESIZED:
-				window_resized = true
 			case .KEY_DOWN:
 				#partial switch sdl_event.key.scancode {
 				case .ESCAPE:
@@ -113,9 +110,7 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 			sdl.PauseAudioStreamDevice(audio.stream)
 		}
 
-		if vm.vblank_interrupt || window_resized {
-			draw_video_display(video_display, vm.framebuffer)
-		}
+		draw_video_display(video_display, vm.framebuffer)
 
 		wait(FPS_60_TICKS, frame_start)
 	}
