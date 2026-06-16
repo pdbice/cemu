@@ -27,6 +27,7 @@ Virtual_Machine :: struct {
 	stack:            [12]u16,
 	keypad:           Keypad,
 	v_registers:      [16]u8,
+	rpl_flags:        [8]u8,
 	variant:          Variant,
 	program_counter:  u16,
 	index_register:   u16,
@@ -275,7 +276,9 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 				vm.index_register += u16(x_operand) + 1
 			}
 		case 0x75:
+			copy(vm.rpl_flags[:], vm.v_registers[:(x_operand & 7) + 1])
 		case 0x85:
+			copy(vm.v_registers[:], vm.rpl_flags[:(x_operand & 7) + 1])
 		}
 	}
 }
