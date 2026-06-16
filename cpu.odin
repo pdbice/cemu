@@ -5,16 +5,14 @@ import "core:slice"
 
 Variant :: enum {
 	Superchip_Modern,
-	Superchip_Legacy,
 	Cosmac,
 }
 
-Display :: struct {
-	framebuffer:  [8192]u8,
-	length:       int,
-	width:        int,
-	height:       int,
-	scroll_width: int,
+Video :: struct {
+	framebuffer: [8192]u8,
+	length:      int,
+	width:       int,
+	height:      int,
 }
 
 Keypad :: struct {
@@ -24,9 +22,8 @@ Keypad :: struct {
 }
 
 Virtual_Machine :: struct {
-	display:          Display,
+	video:            Video,
 	ram:              [4096]u8,
-	framebuffer:      [2048]u8,
 	stack:            [12]u16,
 	keypad:           Keypad,
 	v_registers:      [16]u8,
@@ -64,14 +61,9 @@ load_rom :: proc(vm: ^Virtual_Machine, rom: []u8) {
 	copy(vm.ram[:], font[:])
 	copy(vm.ram[512:], rom[:])
 
-	vm.display.length = 2048
-	vm.display.width = 64
-	vm.display.height = 32
-	if vm.variant == .Superchip_Legacy {
-		vm.display.scroll_width = 2
-	} else {
-		vm.display.scroll_width = 4
-	}
+	vm.video.length = 2048
+	vm.video.width = 64
+	vm.video.height = 32
 
 	vm.program_counter = 512
 }
@@ -96,42 +88,30 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 		}
 		switch opcode_low {
 		case 0xE0:
-			vm.display.framebuffer = 0
+			vm.video.framebuffer = 0
 		case 0xEE:
 			vm.stack_pointer -= 1
 			vm.program_counter = vm.stack[vm.stack_pointer]
 			vm.stack[vm.stack_pointer] = 0
 		case 0xFB:
-			scroll_right(&vm.display)
+			scroll_right(&vm.video)
 		case 0xFC:
-			scroll_left(&vm.display)
+			scroll_left(&vm.video)
 		case 0xFD:
 			vm.program_counter -= 2
 		case 0xFE:
-			vm.display.length = 2048
-			vm.display.width = 64
-			vm.display.height = 32
-			#partial switch vm.variant {
-			case .Superchip_Modern:
-				vm.display.framebuffer = 0
-			case .Superchip_Legacy:
-				vm.display.scroll_width = 2
-			}
+			vm.video.length = 2048
+			vm.video.width = 64
+			vm.video.height = 32
+			vm.video.framebuffer = 0
 		case 0xFF:
-			vm.display.length = 8192
-			vm.display.width = 128
-			vm.display.height = 64
-			vm.display.scroll_width = 4
-			if vm.variant == .Superchip_Modern {
-				vm.display.framebuffer = 0
-			}
+			vm.video.length = 8192
+			vm.video.width = 128
+			vm.video.height = 64
+			vm.video.framebuffer = 0
 		case:
 			if y_operand == 0xC {
-				if vm.variant == .Superchip_Legacy && vm.display.length == 2048 {
-					scroll_down(&vm.display, n_operand / 2)
-				} else {
-					scroll_down(&vm.display, n_operand)
-				}
+				scroll_down(&vm.video, n_operand)
 			}
 		}
 	case 0x10:
@@ -237,25 +217,6 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 			} else {
 				draw_16x16(vm, x_operand, y_operand)
 			}
-		case .Superchip_Legacy:
-			if vm.display.length == 2048 {
-				if vm.vblank_interrupt {
-					vm.program_counter -= 2
-					return
-				}
-				if n_operand > 0 {
-					draw_8xN(vm, x_operand, y_operand, n_operand)
-				} else {
-					draw_8x16(vm, x_operand, y_operand)
-				}
-				vm.vblank_interrupt = true
-			} else {
-				if n_operand > 0 {
-					draw_8xN_with_collision_count(vm, x_operand, y_operand, n_operand)
-				} else {
-					draw_16x16_with_collision_count(vm, x_operand, y_operand)
-				}
-			}
 		case .Cosmac:
 			if vm.vblank_interrupt {
 				vm.program_counter -= 2
@@ -319,118 +280,55 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 	}
 }
 
-scroll_right :: proc(display: ^Display) {
-	scroll_length := display.width - display.scroll_width
-	for row_start := 0; row_start < display.length; row_start += display.width {
+scroll_right :: proc(video: ^Video) {
+	for row_start := 0; row_start < video.length; row_start += video.width {
 		copy(
-			display.framebuffer[row_start + display.scroll_width:],
-			display.framebuffer[row_start:][:scroll_length]
+			video.framebuffer[row_start + 4:],
+			video.framebuffer[row_start:][:video.width - 4]
 		)
-		slice.zero(display.framebuffer[row_start:][:display.scroll_width])
+		slice.zero(video.framebuffer[row_start:][:4])
 	}
 }
 
-scroll_left :: proc(display: ^Display) {
-	scroll_length := display.width - display.scroll_width
-	for row_start := 0; row_start < display.length; row_start += display.width {
+scroll_left :: proc(video: ^Video) {
+	for row_start := 0; row_start < video.length; row_start += video.width {
 		copy(
-			display.framebuffer[row_start:],
-			display.framebuffer[row_start + display.scroll_width:][:scroll_length]
+			video.framebuffer[row_start:],
+			video.framebuffer[row_start + 4:][:video.width - 4]
 		)
-		slice.zero(display.framebuffer[row_start + scroll_length:][:display.scroll_width])
+		slice.zero(video.framebuffer[row_start + video.width - 4:][:4])
 	}
 }
 
-scroll_down :: proc(display: ^Display, rows: u8) {
-	scroll_height := int(rows) * display.width
-	scroll_length := display.length - scroll_height
-	copy(display.framebuffer[scroll_height:], display.framebuffer[:scroll_length])
-	slice.zero(display.framebuffer[:scroll_height])
+scroll_down :: proc(video: ^Video, rows: u8) {
+	scroll_height := int(rows) * video.width
+	scroll_length := video.length - scroll_height
+	copy(video.framebuffer[scroll_height:], video.framebuffer[:scroll_length])
+	slice.zero(video.framebuffer[:scroll_height])
 }
 
 draw_8xN :: proc(vm: ^Virtual_Machine, x_operand, y_operand, n_operand: u8) {
 	vm.v_registers[15] = 0
 
-	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
-	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+	x_start := int(vm.v_registers[x_operand]) & (vm.video.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.video.height - 1)
 
 	for sprite_index in vm.index_register..<vm.index_register + u16(n_operand) {
 		sprite_row := vm.ram[sprite_index]
 		shift_length: u8 = 7
-		framebuffer_index := pixel_y * vm.display.width + x_start
+		framebuffer_index := pixel_y * vm.video.width + x_start
 		for pixel_x in x_start..<x_start + 8 {
-			if pixel_x == vm.display.width {
+			if pixel_x == vm.video.width {
 				break
 			}
 			sprite_bit := (sprite_row >> shift_length) & 1
-			vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
-			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			vm.v_registers[15] |= vm.video.framebuffer[framebuffer_index] & sprite_bit
+			vm.video.framebuffer[framebuffer_index] ~= sprite_bit
 			framebuffer_index += 1
 			shift_length -= 1
 		}
 		pixel_y += 1
-		if pixel_y == vm.display.height {
-			break
-		}
-	}
-}
-
-draw_8xN_with_collision_count :: proc(vm: ^Virtual_Machine, x_operand, y_operand, n_operand: u8) {
-	pixel_collision: u8
-	collision_count: u8
-	if vm.v_registers[y_operand] + n_operand > u8(vm.display.height) {
-		collision_count = vm.v_registers[y_operand] + n_operand - u8(vm.display.height)
-	}
-	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
-	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
-
-	for sprite_index in vm.index_register..<vm.index_register + u16(n_operand) {
-		sprite_row := vm.ram[sprite_index]
-		shift_length: u8 = 7
-		framebuffer_index := pixel_y * vm.display.width + x_start
-		for pixel_x in x_start..<x_start + 8 {
-			if pixel_x == vm.display.width {
-				break
-			}
-			sprite_bit := (sprite_row >> shift_length) & 1
-			pixel_collision |= vm.framebuffer[framebuffer_index] & sprite_bit
-			vm.framebuffer[framebuffer_index] ~= sprite_bit
-			framebuffer_index += 1
-			shift_length -= 1
-		}
-		collision_count += pixel_collision
-		pixel_collision = 0
-		pixel_y += 1
-		if pixel_y == vm.display.height {
-			break
-		}
-	}
-
-	vm.v_registers[15] = collision_count
-}
-
-draw_8x16 :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
-	vm.v_registers[15] = 0
-
-	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
-	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
-
-	for sprite_index := vm.index_register; sprite_index < vm.index_register + 16; sprite_index += 2 {
-		sprite_row := vm.ram[sprite_index]
-		shift_length: u8 = 7
-		framebuffer_index := pixel_y * vm.display.width + x_start
-		for pixel_x in x_start..<x_start + 8 {
-			if pixel_x == vm.display.width {
-				break
-			}
-			sprite_bit := (sprite_row >> shift_length) & 1
-			vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
-			vm.framebuffer[framebuffer_index] ~= sprite_bit
-			framebuffer_index += 1
-			shift_length -= 1
-		}
-		pixel_y += 1
-		if pixel_y == vm.display.height {
+		if pixel_y == vm.video.height {
 			break
 		}
 	}
@@ -439,60 +337,26 @@ draw_8x16 :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
 draw_16x16 :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
 	vm.v_registers[15] = 0
 
-	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
-	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
+	x_start := int(vm.v_registers[x_operand]) & (vm.video.width - 1)
+	pixel_y := int(vm.v_registers[y_operand]) & (vm.video.height - 1)
 
-	for sprite_index := vm.index_register; sprite_index < vm.index_register + 16; sprite_index += 2 {
+	for sprite_index := vm.index_register; sprite_index < vm.index_register + 32; sprite_index += 2 {
 		sprite_row: u16 = u16(vm.ram[sprite_index]) << 8 | u16(vm.ram[sprite_index + 1])
 		shift_length: u16 = 15
-		framebuffer_index := pixel_y * vm.display.width + x_start
+		framebuffer_index := pixel_y * vm.video.width + x_start
 		for pixel_x in x_start..<x_start + 16 {
-			if pixel_x == vm.display.width {
+			if pixel_x == vm.video.width {
 				break
 			}
 			sprite_bit := u8(sprite_row >> shift_length) & 1
-			vm.v_registers[15] |= vm.framebuffer[framebuffer_index] & sprite_bit
-			vm.framebuffer[framebuffer_index] ~= sprite_bit
+			vm.v_registers[15] |= vm.video.framebuffer[framebuffer_index] & sprite_bit
+			vm.video.framebuffer[framebuffer_index] ~= sprite_bit
 			framebuffer_index += 1
 			shift_length -= 1
 		}
 		pixel_y += 1
-		if pixel_y == vm.display.height {
+		if pixel_y == vm.video.height {
 			break
 		}
 	}
-}
-
-draw_16x16_with_collision_count :: proc(vm: ^Virtual_Machine, x_operand, y_operand: u8) {
-	pixel_collision: u8
-	collision_count: u8
-	if vm.v_registers[y_operand] + 16 > u8(vm.display.height) {
-		collision_count = vm.v_registers[y_operand] + 16 - u8(vm.display.height)
-	}
-	x_start := int(vm.v_registers[x_operand]) & (vm.display.width - 1)
-	pixel_y := int(vm.v_registers[y_operand]) & (vm.display.height - 1)
-
-	for sprite_index := vm.index_register; sprite_index < vm.index_register + 16; sprite_index += 2 {
-		sprite_row: u16 = u16(vm.ram[sprite_index]) << 8 | u16(vm.ram[sprite_index + 1])
-		shift_length: u16 = 15
-		framebuffer_index := pixel_y * vm.display.width + x_start
-		for pixel_x in x_start..<x_start + 16 {
-			if pixel_x == vm.display.width {
-				break
-			}
-			sprite_bit := u8(sprite_row >> shift_length) & 1
-			pixel_collision |= vm.framebuffer[framebuffer_index] & sprite_bit
-			vm.framebuffer[framebuffer_index] ~= sprite_bit
-			framebuffer_index += 1
-			shift_length -= 1
-		}
-		collision_count += pixel_collision
-		pixel_collision = 0
-		pixel_y += 1
-		if pixel_y == vm.display.height {
-			break
-		}
-	}
-
-	vm.v_registers[15] = collision_count
 }

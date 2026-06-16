@@ -4,9 +4,10 @@ import "core:fmt"
 import sdl "vendor:sdl3"
 
 Video_Display :: struct {
-	window:   ^sdl.Window,
-	renderer: ^sdl.Renderer,
-	texture:  ^sdl.Texture,
+	window:        ^sdl.Window,
+	renderer:      ^sdl.Renderer,
+	texture_lores: ^sdl.Texture,
+	texture_hires: ^sdl.Texture,
 }
 
 VIDEO_DISPLAY_WIDTH  : i32 : 1024
@@ -26,20 +27,31 @@ init_video_display :: proc(display: ^Video_Display) -> bool {
 		return false
 	}
 
-	display.texture = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
-	if display.texture == nil {
+	display.texture_lores = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
+	if display.texture_lores == nil {
 		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
 		return false
 	}
-	sdl.SetTextureScaleMode(display.texture, .NEAREST)
+	sdl.SetTextureScaleMode(display.texture_lores, .NEAREST)
+
+	display.texture_hires = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
+	if display.texture_hires == nil {
+		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
+		sdl.DestroyTexture(display.texture_lores)
+		sdl.DestroyRenderer(display.renderer)
+		sdl.DestroyWindow(display.window)
+		return false
+	}
+	sdl.SetTextureScaleMode(display.texture_hires, .NEAREST)
 
 	return true
 }
 
 destroy_video_display :: proc(display: ^Video_Display) {
-	sdl.DestroyTexture(display.texture)
+	sdl.DestroyTexture(display.texture_hires)
+	sdl.DestroyTexture(display.texture_lores)
 	sdl.DestroyRenderer(display.renderer)
 	sdl.DestroyWindow(display.window)
 }
@@ -47,21 +59,28 @@ destroy_video_display :: proc(display: ^Video_Display) {
 VIDEO_FOREGROUND : u32 : 0xFF808080
 VIDEO_BACKGROUND : u32 : 0xFF000000
 
-draw_video_display :: proc(display: Video_Display, framebuffer: [2048]u8) {
+draw_video_display :: proc(display: Video_Display, video: Video) {
 	pitch: i32
 	pixels: [^]u32
 
-	sdl.LockTexture(display.texture, nil, cast(^rawptr)&pixels, &pitch)
+	texture: ^sdl.Texture
+	if video.length == 2048 {
+		texture = display.texture_lores
+	} else {
+		texture = display.texture_hires
+	}
 
-	for framebuffer_pixel, pixel_index in framebuffer {
-		if framebuffer_pixel == 1 {
+	sdl.LockTexture(texture, nil, cast(^rawptr)&pixels, &pitch)
+
+	for pixel_index in 0..<video.length {
+		if video.framebuffer[pixel_index] == 1 {
 			pixels[pixel_index] = VIDEO_FOREGROUND
 		} else {
 			pixels[pixel_index] = VIDEO_BACKGROUND
 		}
 	}
 
-	sdl.UnlockTexture(display.texture)
-	sdl.RenderTexture(display.renderer, display.texture, nil, nil)
+	sdl.UnlockTexture(texture)
+	sdl.RenderTexture(display.renderer, texture, nil, nil)
 	sdl.RenderPresent(display.renderer)
 }

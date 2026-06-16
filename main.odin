@@ -26,8 +26,6 @@ main :: proc() {
 			switch argument {
 			case "-variant:modern":
 				variant = .Superchip_Modern
-			case "-variant:legacy":
-				variant = .Superchip_Legacy
 			case "-variant:cosmac":
 				variant = .Cosmac
 			case:
@@ -110,7 +108,7 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 			sdl.PauseAudioStreamDevice(audio.stream)
 		}
 
-		draw_video_display(video_display, vm.framebuffer)
+		draw_video_display(video_display, vm.video)
 
 		wait(FPS_60_TICKS, frame_start)
 	}
@@ -133,7 +131,6 @@ usage :: proc() {
 	fmt.println("\tvariant:<variant>")
 	fmt.println("\t\tSelects the Chip-8 variant to use")
 	fmt.println("\t\t\t-variant:modern\tThe modern interpretation of the super chip variant")
-	fmt.println("\t\t\t-variant:legacy\tThe super chip v1.1 variant")
 	fmt.println("\t\t\t-variant:cosmac\tThe Chip-8 variant used by the Cosmac VIP")
 	fmt.println()
 }
