@@ -4,10 +4,9 @@ import "core:fmt"
 import sdl "vendor:sdl3"
 
 Video_Display :: struct {
-	window:        ^sdl.Window,
-	renderer:      ^sdl.Renderer,
-	texture_lores: ^sdl.Texture,
-	texture_hires: ^sdl.Texture,
+	window:   ^sdl.Window,
+	renderer: ^sdl.Renderer,
+	texture:  [2]^sdl.Texture,
 }
 
 VIDEO_DISPLAY_WIDTH  : i32 : 1024
@@ -27,31 +26,31 @@ init_video_display :: proc(display: ^Video_Display) -> bool {
 		return false
 	}
 
-	display.texture_lores = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
-	if display.texture_lores == nil {
+	display.texture[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
+	if display.texture[0] == nil {
 		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
 		return false
 	}
-	sdl.SetTextureScaleMode(display.texture_lores, .NEAREST)
+	sdl.SetTextureScaleMode(display.texture[0], .NEAREST)
 
-	display.texture_hires = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
-	if display.texture_hires == nil {
+	display.texture[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
+	if display.texture[1] == nil {
 		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
-		sdl.DestroyTexture(display.texture_lores)
+		sdl.DestroyTexture(display.texture[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
 		return false
 	}
-	sdl.SetTextureScaleMode(display.texture_hires, .NEAREST)
+	sdl.SetTextureScaleMode(display.texture[1], .NEAREST)
 
 	return true
 }
 
 destroy_video_display :: proc(display: ^Video_Display) {
-	sdl.DestroyTexture(display.texture_hires)
-	sdl.DestroyTexture(display.texture_lores)
+	sdl.DestroyTexture(display.texture[1])
+	sdl.DestroyTexture(display.texture[0])
 	sdl.DestroyRenderer(display.renderer)
 	sdl.DestroyWindow(display.window)
 }
@@ -65,9 +64,9 @@ draw_video_display :: proc(display: Video_Display, video: Video) {
 
 	texture: ^sdl.Texture
 	if video.length == 2048 {
-		texture = display.texture_lores
+		texture = display.texture[0]
 	} else {
-		texture = display.texture_hires
+		texture = display.texture[1]
 	}
 
 	sdl.LockTexture(texture, nil, cast(^rawptr)&pixels, &pitch)
