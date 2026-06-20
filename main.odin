@@ -24,6 +24,7 @@ main :: proc() {
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
+			case "-debug":
 			case "-variant:modern":
 				variant = .Superchip_Modern
 			case "-variant:cosmac":
@@ -128,7 +129,9 @@ usage :: proc() {
 	fmt.println()
 	fmt.println("\tFlags")
 	fmt.println()
-	fmt.println("\tvariant:<variant>")
+	fmt.println("\t-debug")
+	fmt.println("\t\tRun emulator in debug mode")
+	fmt.println("\t-variant:<variant>")
 	fmt.println("\t\tSelects the Chip-8 variant to use")
 	fmt.println("\t\t\t-variant:modern\tThe modern interpretation of the super chip variant")
 	fmt.println("\t\t\t-variant:cosmac\tThe Chip-8 variant used by the Cosmac VIP")
