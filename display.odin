@@ -9,11 +9,8 @@ Video_Display :: struct {
 	texture:  [2]^sdl.Texture,
 }
 
-VIDEO_DISPLAY_WIDTH  : i32 : 1024
-VIDEO_DISPLAY_HEIGHT : i32 : 512
-
 init_video_display :: proc(display: ^Video_Display) -> bool {
-	display.window = sdl.CreateWindow("Chip-8", VIDEO_DISPLAY_WIDTH, VIDEO_DISPLAY_HEIGHT, { .RESIZABLE })
+	display.window = sdl.CreateWindow("Chip-8", 1024, 512, { .RESIZABLE })
 	if display.window == nil {
 		fmt.eprintfln("SDL CreateWindow error: %v", sdl.GetError())
 		return false
@@ -55,9 +52,6 @@ destroy_video_display :: proc(display: ^Video_Display) {
 	sdl.DestroyWindow(display.window)
 }
 
-VIDEO_FOREGROUND : u32 : 0xFF808080
-VIDEO_BACKGROUND : u32 : 0xFF000000
-
 draw_video_display :: proc(display: Video_Display, video: Video) {
 	pitch: i32
 	pixels: [^]u32
@@ -73,9 +67,9 @@ draw_video_display :: proc(display: Video_Display, video: Video) {
 
 	for pixel_index in 0..<video.length {
 		if video.framebuffer[pixel_index] == 1 {
-			pixels[pixel_index] = VIDEO_FOREGROUND
+			pixels[pixel_index] = 0xFF808080
 		} else {
-			pixels[pixel_index] = VIDEO_BACKGROUND
+			pixels[pixel_index] = 0xFF000000
 		}
 	}
 
