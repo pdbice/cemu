@@ -25,7 +25,7 @@ init_video_display :: proc(display: ^Video_Display) -> bool {
 
 	display.texture[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
 	if display.texture[0] == nil {
-		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
+		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
 		return false
@@ -34,7 +34,7 @@ init_video_display :: proc(display: ^Video_Display) -> bool {
 
 	display.texture[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
 	if display.texture[1] == nil {
-		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
+		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
 		sdl.DestroyTexture(display.texture[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
