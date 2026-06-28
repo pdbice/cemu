@@ -4,9 +4,9 @@ import "core:fmt"
 import sdl "vendor:sdl3"
 
 Video_Display :: struct {
+	texture:  [2]^sdl.Texture,
 	window:   ^sdl.Window,
 	renderer: ^sdl.Renderer,
-	texture:  [2]^sdl.Texture,
 }
 
 init_video_display :: proc(display: ^Video_Display) -> bool {
