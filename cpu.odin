@@ -101,11 +101,17 @@ fetch_and_execute :: proc(vm: ^Virtual_Machine) {
 		case 0xFD:
 			vm.program_counter -= 2
 		case 0xFE:
+			if vm.variant == .Cosmac {
+				return
+			}
 			vm.video.length = 2048
 			vm.video.width = 64
 			vm.video.height = 32
 			vm.video.framebuffer = 0
 		case 0xFF:
+			if vm.variant == .Cosmac {
+				return
+			}
 			vm.video.length = 8192
 			vm.video.width = 128
 			vm.video.height = 64
