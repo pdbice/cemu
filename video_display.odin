@@ -4,9 +4,9 @@ import "core:fmt"
 import sdl "vendor:sdl3"
 
 Video_Display :: struct {
-	texture:  [2]^sdl.Texture,
-	window:   ^sdl.Window,
-	renderer: ^sdl.Renderer,
+	video_textures: [2]^sdl.Texture,
+	window:         ^sdl.Window,
+	renderer:       ^sdl.Renderer,
 }
 
 init_video_display :: proc(display: ^Video_Display) -> bool {
@@ -23,31 +23,31 @@ init_video_display :: proc(display: ^Video_Display) -> bool {
 		return false
 	}
 
-	display.texture[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
-	if display.texture[0] == nil {
+	display.video_textures[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
+	if display.video_textures[0] == nil {
 		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
 		return false
 	}
-	sdl.SetTextureScaleMode(display.texture[0], .NEAREST)
+	sdl.SetTextureScaleMode(display.video_textures[0], .NEAREST)
 
-	display.texture[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
-	if display.texture[1] == nil {
+	display.video_textures[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
+	if display.video_textures[1] == nil {
 		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
-		sdl.DestroyTexture(display.texture[0])
+		sdl.DestroyTexture(display.video_textures[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
 		return false
 	}
-	sdl.SetTextureScaleMode(display.texture[1], .NEAREST)
+	sdl.SetTextureScaleMode(display.video_textures[1], .NEAREST)
 
 	return true
 }
 
 destroy_video_display :: proc(display: ^Video_Display) {
-	sdl.DestroyTexture(display.texture[1])
-	sdl.DestroyTexture(display.texture[0])
+	sdl.DestroyTexture(display.video_textures[1])
+	sdl.DestroyTexture(display.video_textures[0])
 	sdl.DestroyRenderer(display.renderer)
 	sdl.DestroyWindow(display.window)
 }
@@ -58,9 +58,9 @@ draw_video_display :: proc(display: Video_Display, video: Video) {
 
 	texture: ^sdl.Texture
 	if video.length == 2048 {
-		texture = display.texture[0]
+		texture = display.video_textures[0]
 	} else {
-		texture = display.texture[1]
+		texture = display.video_textures[1]
 	}
 
 	sdl.LockTexture(texture, nil, cast(^rawptr)&pixels, &pitch)
