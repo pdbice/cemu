@@ -99,3 +99,44 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 	sdl.DestroyRenderer(display.renderer)
 	sdl.DestroyWindow(display.window)
 }
+
+RGBA_BLACK     : sdl.Color : { 0x00, 0x00, 0x00, 0xFF }
+RGBA_DARK_GRAY : sdl.Color : { 0x40, 0x40, 0x40, 0xFF }
+RGBA_GRAY      : sdl.Color : { 0x80, 0x80, 0x80, 0xFF }
+RGBA_LIGH_GRAY : sdl.Color : { 0xC0, 0xC0, 0xC0, 0xFF }
+RGBA_WHITE     : sdl.Color : { 0xFF, 0xFF, 0xFF, 0xFF }
+
+draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, color: sdl.Color = RGBA_WHITE) {
+	sdl.SetTextureColorMod(display.glyph_texture, color.r, color.g, color.b)
+
+	destination: sdl.FRect = { position.x, position.y, FONT_WIDTH, FONT_HEIGHT }
+
+	for character in text {
+		if character == '\n' {
+			destination.y += FONT_HEIGHT
+			destination.x = position.x
+			continue
+		}
+		if u8(character) < 32 || u8(character) > 126 {
+			continue
+		}
+		source := display.glyph_atlas[u8(character) - 32]
+		sdl.RenderTexture(display.renderer, display.glyph_texture, &source, &destination)
+	}
+}
+
+draw_rect_lines :: proc(display: Debug_Display, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
+	rects: [4]sdl.FRect = {
+		sdl.FRect { rect.x, rect.y, rect.w, line_width },
+		sdl.FRect { rect.x + rect.w - line_width, rect.y + line_width, line_width, rect.h - 2 * line_width },
+		sdl.FRect { rect.x, rect.y + rect.h - line_width, rect.w, line_width },
+		sdl.FRect { rect.x, rect.y + line_width, line_width, rect.h - 2 * line_width },
+	}
+	sdl.SetRenderDrawColor(display.renderer, color.r, color.g, color.b, color.a)
+	sdl.RenderFillRects(display.renderer, &rects[0], 4)
+}
+
+render_clear :: proc(display: Debug_Display, color: sdl.Color = RGBA_BLACK) {
+	sdl.SetRenderDrawColor(display.renderer, color.r, color.g, color.b, color.a)
+	sdl.RenderClear(display.renderer)
+}
