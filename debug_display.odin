@@ -125,6 +125,12 @@ draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, co
 	}
 }
 
+draw_horizontal_line :: proc(display: Debug_Display, position: sdl.FPoint, length: f32, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
+	sdl.SetRenderDrawColor(display.renderer, color.r, color.g, color.b, color.a)
+	rect: sdl.FRect = { position.x, position.y, position.x + length, position.y + line_width }
+	sdl.RenderFillRect(display.renderer, &rect)
+}
+
 draw_rect_lines :: proc(display: Debug_Display, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
 	rects: [4]sdl.FRect = {
 		sdl.FRect { rect.x, rect.y, rect.w, line_width },
