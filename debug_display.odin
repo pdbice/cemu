@@ -13,9 +13,9 @@ Debug_Display :: struct {
 }
 
 FONT_FILE    :: "./assets/LiberationMono-Regular.ttf"
-FONT_PT_SIZE : f32 : 13.0
-FONT_HEIGHT  : f32 : 16.0
-FONT_WIDTH   : f32 : 8.0
+FONT_PT_SIZE : f32 : 16.0
+FONT_HEIGHT  : f32 : 19.0
+FONT_WIDTH   : f32 : 10.0
 
 init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	display.window = sdl.CreateWindow("Chip-8 Debugger", 1024, 768, { .RESIZABLE, .MAXIMIZED })
