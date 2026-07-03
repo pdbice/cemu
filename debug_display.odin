@@ -60,6 +60,15 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 		glyph_x += FONT_WIDTH
 	}
 
+	if !ttf.Init() {
+		fmt.eprintfln("TTF Init error: %v", sdl.GetError())
+		sdl.DestroyTexture(display.video_textures[1])
+		sdl.DestroyTexture(display.video_textures[0])
+		sdl.DestroyRenderer(display.renderer)
+		sdl.DestroyWindow(display.window)
+	}
+	defer ttf.Quit()
+
 	font := ttf.OpenFont(FONT_FILE, FONT_PT_SIZE)
 	if font == nil {
 		fmt.eprintfln("TTF OpenFont error: %v", sdl.GetError())
