@@ -12,7 +12,7 @@ Debug_Display :: struct {
 	renderer:       ^sdl.Renderer,
 }
 
-FONT_FILE    :: ""
+FONT_FILE    :: "./assets/LiberationMono-Regular.ttf"
 FONT_PT_SIZE : f32 : 13.0
 FONT_HEIGHT  : f32 : 16.0
 FONT_WIDTH   : f32 : 8.0
@@ -131,6 +131,7 @@ draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, co
 		}
 		source := display.glyph_atlas[u8(character) - 32]
 		sdl.RenderTexture(display.renderer, display.glyph_texture, &source, &destination)
+		destination.x += FONT_WIDTH
 	}
 }
 
