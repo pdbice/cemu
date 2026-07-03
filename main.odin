@@ -19,12 +19,14 @@ main :: proc() {
 		return
 	}
 
+	debug := false
 	variant: Variant
 
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
 			case "-debug":
+				debug = true
 			case "-variant:modern":
 				variant = .Superchip_Modern
 			case "-variant:cosmac":
@@ -49,7 +51,11 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
-	main_loop(rom, variant)
+	if debug {
+		main_debug_loop(rom, variant)
+	} else {
+		main_loop(rom, variant)
+	}
 }
 
 FPS_60_TICKS : i64 : 16666667
@@ -112,6 +118,44 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 		draw_video_display(video_display, vm.video)
 
 		wait(FPS_60_TICKS, frame_start)
+	}
+}
+
+main_debug_loop :: proc(rom: []u8, variant: Variant) {
+	debug_display: Debug_Display
+	if !init_debug_display(&debug_display) {
+		return
+	}
+
+	audio: Audio
+	if !init_audio(&audio) {
+		return
+	}
+	defer sdl.DestroyAudioStream(audio.stream)
+
+	vm: Virtual_Machine
+	load_rom(&vm, rom)
+	vm.variant = variant
+
+	for {
+		frame_start := time.tick_now()
+
+		sdl_event: sdl.Event
+
+		for sdl.PollEvent(&sdl_event) {
+			#partial switch sdl_event.type {
+			case .QUIT:
+				return
+			case .KEY_DOWN:
+				#partial switch sdl_event.key.scancode {
+				case .ESCAPE:
+					return
+				}
+			}
+		}
+
+		render_clear(debug_display)
+		sdl.RenderPresent(debug_display.renderer)
 	}
 }
 
