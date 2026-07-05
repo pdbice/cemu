@@ -33,3 +33,10 @@ update_mouse :: proc(mouse: ^Mouse) {
 		mouse.locked = false
 	}
 }
+
+mouse_in_rect :: proc(window: ^sdl.Window, mouse: Mouse, rect: sdl.FRect) -> bool {
+	if mouse.window != window {
+		return false
+	}
+	return sdl.PointInRectFloat(mouse.position, rect)
+}
