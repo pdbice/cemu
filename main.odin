@@ -154,7 +154,7 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 			}
 		}
 
-		render_clear(debug_display)
+		render_clear(debug_display.renderer)
 		sdl.RenderPresent(debug_display.renderer)
 	}
 }

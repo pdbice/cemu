@@ -135,24 +135,24 @@ draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, co
 	}
 }
 
-draw_horizontal_line :: proc(display: Debug_Display, position: sdl.FPoint, length: f32, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
-	sdl.SetRenderDrawColor(display.renderer, color.r, color.g, color.b, color.a)
-	rect: sdl.FRect = { position.x, position.y, position.x + length, position.y + line_width }
-	sdl.RenderFillRect(display.renderer, &rect)
+render_horizontal_line :: proc(renderer: ^sdl.Renderer, position: sdl.FPoint, length: f32, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
+	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
+	rect: sdl.FRect = { position.x, position.y, length, line_width }
+	sdl.RenderFillRect(renderer, &rect)
 }
 
-draw_rect_lines :: proc(display: Debug_Display, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
+render_rect_lines :: proc(renderer: ^sdl.Renderer, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
 	rects: [4]sdl.FRect = {
 		sdl.FRect { rect.x, rect.y, rect.w, line_width },
 		sdl.FRect { rect.x + rect.w - line_width, rect.y + line_width, line_width, rect.h - 2 * line_width },
 		sdl.FRect { rect.x, rect.y + rect.h - line_width, rect.w, line_width },
 		sdl.FRect { rect.x, rect.y + line_width, line_width, rect.h - 2 * line_width },
 	}
-	sdl.SetRenderDrawColor(display.renderer, color.r, color.g, color.b, color.a)
-	sdl.RenderFillRects(display.renderer, &rects[0], 4)
+	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
+	sdl.RenderFillRects(renderer, &rects[0], 4)
 }
 
-render_clear :: proc(display: Debug_Display, color: sdl.Color = RGBA_BLACK) {
-	sdl.SetRenderDrawColor(display.renderer, color.r, color.g, color.b, color.a)
-	sdl.RenderClear(display.renderer)
+render_clear :: proc(renderer: ^sdl.Renderer, color: sdl.Color = RGBA_BLACK) {
+	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
+	sdl.RenderClear(renderer)
 }
