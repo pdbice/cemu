@@ -126,6 +126,7 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 	if !init_debug_display(&debug_display) {
 		return
 	}
+	defer destroy_debug_display(&debug_display)
 
 	audio: Audio
 	if !init_audio(&audio) {
