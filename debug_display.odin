@@ -13,9 +13,9 @@ Debug_Display :: struct {
 }
 
 FONT_FILE    :: "./assets/LiberationMono-Regular.ttf"
-FONT_PT_SIZE : f32 : 16.0
-FONT_HEIGHT  : f32 : 19.0
-FONT_WIDTH   : f32 : 10.0
+FONT_PT_SIZE : f32 : 14.0
+FONT_HEIGHT  : f32 : 16.0
+FONT_WIDTH   : f32 : 8.0
 
 init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	display.window = sdl.CreateWindow("Chip-8 Debugger", 1024, 768, { .RESIZABLE, .MAXIMIZED })
@@ -109,11 +109,47 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 	sdl.DestroyWindow(display.window)
 }
 
-RGBA_BLACK     : sdl.Color : { 0x00, 0x00, 0x00, 0xFF }
-RGBA_DARK_GRAY : sdl.Color : { 0x40, 0x40, 0x40, 0xFF }
-RGBA_GRAY      : sdl.Color : { 0x80, 0x80, 0x80, 0xFF }
-RGBA_LIGH_GRAY : sdl.Color : { 0xC0, 0xC0, 0xC0, 0xFF }
-RGBA_WHITE     : sdl.Color : { 0xFF, 0xFF, 0xFF, 0xFF }
+RGBA_BLACK      : sdl.Color : { 0x00, 0x00, 0x00, 0xFF }
+RGBA_DARK_GRAY  : sdl.Color : { 0x40, 0x40, 0x40, 0xFF }
+RGBA_GRAY       : sdl.Color : { 0x80, 0x80, 0x80, 0xFF }
+RGBA_LIGHT_GRAY : sdl.Color : { 0xC0, 0xC0, 0xC0, 0xFF }
+RGBA_WHITE      : sdl.Color : { 0xFF, 0xFF, 0xFF, 0xFF }
+
+button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: ^Mouse, mouse_lock_id: Mouse_Lock_Id) -> bool {
+	clicked := false
+
+	bg_color := RGBA_GRAY
+	fg_color := RGBA_BLACK
+
+	if mouse_in_rect(display.window, mouse^, rect^) && (!mouse.locked || mouse.lock_id == mouse_lock_id) {
+		if mouse.left {
+			bg_color = RGBA_DARK_GRAY
+			fg_color = RGBA_WHITE
+			mouse.locked = true
+			mouse.lock_id = mouse_lock_id
+			clicked = mouse.left_clicked
+		} else {
+			bg_color = RGBA_LIGHT_GRAY
+		}
+	} else if mouse.lock_id == mouse_lock_id {
+		mouse.lock_id = .None
+	}
+
+	sdl.SetRenderDrawColor(display.renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a)
+	sdl.RenderFillRect(display.renderer, rect)
+
+	text_position: sdl.FPoint = {
+		0,
+		rect.y + (rect.h / 2) - (f32(len(text)) * FONT_HEIGHT / 2),
+	}
+	for line in text {
+		text_position.x = rect.x + (rect.w / 2) - f32(len(line)) * FONT_WIDTH / 2
+		draw_text(display, line, text_position, fg_color)
+		text_position.y += FONT_HEIGHT
+	}
+
+	return clicked
+}
 
 draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, color: sdl.Color = RGBA_WHITE) {
 	sdl.SetTextureColorMod(display.glyph_texture, color.r, color.g, color.b)

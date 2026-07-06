@@ -133,6 +133,8 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 	}
 	defer sdl.DestroyAudioStream(audio.stream)
 
+	mouse: Mouse
+
 	vm: Virtual_Machine
 	load_rom(&vm, rom)
 	vm.variant = variant
@@ -153,6 +155,8 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 				}
 			}
 		}
+
+		update_mouse(&mouse)
 
 		render_clear(debug_display.renderer)
 		sdl.RenderPresent(debug_display.renderer)
