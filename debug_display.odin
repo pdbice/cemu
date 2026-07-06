@@ -142,8 +142,9 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: 
 		0,
 		rect.y + (rect.h / 2) - (f32(len(text)) * FONT_HEIGHT / 2),
 	}
+	middle_x := rect.x + (rect.w / 2)
 	for line in text {
-		text_position.x = rect.x + (rect.w / 2) - f32(len(line)) * FONT_WIDTH / 2
+		text_position.x = middle_x - f32(len(line)) * FONT_WIDTH / 2
 		draw_text(display, line, text_position, fg_color)
 		text_position.y += FONT_HEIGHT
 	}
