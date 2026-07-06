@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:math"
 import sdl "vendor:sdl3"
 
-AUDIO_BUFFER_LENGTH : i32 : 1000
+AUDIO_BUFFER_LENGTH : i32 : 2000
 AUDIO_BUFFER_SIZE   : i32 : AUDIO_BUFFER_LENGTH * size_of(f32)
 AUDIO_SAMPLE_RATE   : f32 : 44100
 AUDIO_AMPLITUDE     : f32 : 0.75
