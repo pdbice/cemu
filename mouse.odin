@@ -31,6 +31,7 @@ update_mouse :: proc(mouse: ^Mouse) {
 
 	if !mouse.left {
 		mouse.locked = false
+		mouse.lock_id = .None
 	}
 }
 
