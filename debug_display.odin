@@ -66,6 +66,7 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 		sdl.DestroyTexture(display.video_textures[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
+		return false
 	}
 	defer ttf.Quit()
 
@@ -76,6 +77,7 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 		sdl.DestroyTexture(display.video_textures[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
+		return false
 	}
 	defer ttf.CloseFont(font)
 
@@ -86,6 +88,7 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 		sdl.DestroyTexture(display.video_textures[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
+		return false
 	}
 	defer sdl.DestroySurface(glyph_surface)
 
@@ -96,6 +99,7 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 		sdl.DestroyTexture(display.video_textures[0])
 		sdl.DestroyRenderer(display.renderer)
 		sdl.DestroyWindow(display.window)
+		return false
 	}
 
 	return true
