@@ -35,9 +35,6 @@ update_mouse :: proc(mouse: ^Mouse) {
 	}
 }
 
-mouse_in_rect :: proc(window: ^sdl.Window, mouse: Mouse, rect: sdl.FRect) -> bool {
-	if mouse.window != window {
-		return false
-	}
-	return sdl.PointInRectFloat(mouse.position, rect)
+mouse_in_rect :: #force_inline proc(window: ^sdl.Window, mouse: Mouse, rect: sdl.FRect) -> bool {
+	return mouse.window == window && sdl.PointInRectFloat(mouse.position, rect)
 }
