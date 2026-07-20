@@ -13,9 +13,10 @@ Debug_Display :: struct {
 }
 
 FONT_FILE    :: "./assets/LiberationMono-Regular.ttf"
-FONT_PT_SIZE : f32 : 14.0
-FONT_HEIGHT  : f32 : 16.0
-FONT_WIDTH   : f32 : 8.0
+FONT_PT_SIZE : f32 : 11.0
+FONT_HEIGHT  : f32 : 17.0
+FONT_WIDTH   : f32 : 9.0
+FONT_DPI     : i32 : 96
 
 init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	display.window = sdl.CreateWindow("Chip-8 Debugger", 1024, 768, { .RESIZABLE, .MAXIMIZED })
@@ -80,6 +81,7 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 		return false
 	}
 	defer ttf.CloseFont(font)
+	ttf.SetFontSizeDPI(font, FONT_PT_SIZE, FONT_DPI, FONT_DPI)
 
 	glyph_surface := ttf.RenderText_Blended(font, cstring(&glyph_string[0]), 0, { 0xFF, 0xFF, 0xFF, 0xFF })
 	if glyph_surface == nil {
