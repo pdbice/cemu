@@ -5,18 +5,19 @@ import sdl "vendor:sdl3"
 import "vendor:sdl3/ttf"
 
 Debug_Display :: struct {
-	glyph_atlas:    [95]sdl.FRect,
 	video_textures: [2]^sdl.Texture,
 	glyph_texture:  ^sdl.Texture,
 	window:         ^sdl.Window,
 	renderer:       ^sdl.Renderer,
 }
 
-FONT_FILE    :: "./assets/LiberationMono-Regular.ttf"
-FONT_PT_SIZE : f32 : 11.0
-FONT_HEIGHT  : f32 : 17.0
-FONT_WIDTH   : f32 : 9.0
-FONT_DPI     : i32 : 96
+FONT_FILE        :: "./assets/LiberationMono-Regular.ttf"
+FONT_PT_SIZE     : f32 : 11.0
+FONT_HEIGHT      : f32 : 17.0
+FONT_WIDTH       : f32 : 9.0
+HALF_FONT_HEIGHT : f32 : FONT_HEIGHT / 2.0
+HALF_FONT_WIDTH  : f32 : FONT_WIDTH / 2.0
+FONT_DPI         : i32 : 96
 
 init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	display.window = sdl.CreateWindow("Chip-8 Debugger", 1024, 768, { .RESIZABLE, .MAXIMIZED })
@@ -51,16 +52,6 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	}
 	sdl.SetTextureScaleMode(display.video_textures[1], .NEAREST)
 
-	glyph_string: [95]u8
-	glyph_x: f32 = 0.0
-	for glyph_index in 0..<95 {
-		glyph_string[glyph_index] = u8(glyph_index) + 32
-		display.glyph_atlas[glyph_index].x = glyph_x
-		display.glyph_atlas[glyph_index].w = FONT_WIDTH
-		display.glyph_atlas[glyph_index].h = FONT_HEIGHT
-		glyph_x += FONT_WIDTH
-	}
-
 	if !ttf.Init() {
 		fmt.eprintfln("TTF Init error: %v", sdl.GetError())
 		sdl.DestroyTexture(display.video_textures[1])
@@ -82,6 +73,11 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	}
 	defer ttf.CloseFont(font)
 	ttf.SetFontSizeDPI(font, FONT_PT_SIZE, FONT_DPI, FONT_DPI)
+
+	glyph_string: [95]u8
+	for &glyph_character, glyph_index in glyph_string {
+		glyph_character = u8(glyph_index) + 32
+	}
 
 	glyph_surface := ttf.RenderText_Blended(font, cstring(&glyph_string[0]), 0, { 0xFF, 0xFF, 0xFF, 0xFF })
 	if glyph_surface == nil {
@@ -146,11 +142,11 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: 
 
 	text_position: sdl.FPoint = {
 		0,
-		rect.y + (rect.h / 2) - (f32(len(text)) * FONT_HEIGHT / 2),
+		rect.y + (rect.h / 2) - (f32(len(text)) * HALF_FONT_HEIGHT),
 	}
 	middle_x := rect.x + (rect.w / 2)
 	for line in text {
-		text_position.x = middle_x - f32(len(line)) * FONT_WIDTH / 2
+		text_position.x = middle_x - f32(len(line)) * HALF_FONT_WIDTH
 		draw_text(display, line, text_position, fg_color)
 		text_position.y += FONT_HEIGHT
 	}
@@ -161,6 +157,7 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: 
 draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, color: sdl.Color = RGBA_WHITE) {
 	sdl.SetTextureColorMod(display.glyph_texture, color.r, color.g, color.b)
 
+	source: sdl.FRect = { 0.0, 0.0, FONT_WIDTH, FONT_HEIGHT }
 	destination: sdl.FRect = { position.x, position.y, FONT_WIDTH, FONT_HEIGHT }
 
 	for character in text {
@@ -169,10 +166,10 @@ draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, co
 			destination.x = position.x
 			continue
 		}
-		if u8(character) < 32 || u8(character) > 126 {
+		if character < 32 || character > 126 {
 			continue
 		}
-		source := display.glyph_atlas[u8(character) - 32]
+		source.x = f32(character - 32) * FONT_WIDTH
 		sdl.RenderTexture(display.renderer, display.glyph_texture, &source, &destination)
 		destination.x += FONT_WIDTH
 	}
