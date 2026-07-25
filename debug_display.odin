@@ -4,20 +4,26 @@ import "core:fmt"
 import sdl "vendor:sdl3"
 import "vendor:sdl3/ttf"
 
+FONT_FILE        :: "./assets/LiberationMono-Regular.ttf"
+FONT_DPI         : i32 : 96
+FONT_PT_SIZE     : f32 : 11.0
+FONT_HEIGHT      : f32 : 17.0
+FONT_WIDTH       : f32 : 9.0
+HALF_FONT_HEIGHT : f32 : FONT_HEIGHT / 2.0
+HALF_FONT_WIDTH  : f32 : FONT_WIDTH / 2.0
+
+BLACK      : sdl.Color : { 0x00, 0x00, 0x00, 0xFF }
+DARK_GRAY  : sdl.Color : { 0x40, 0x40, 0x40, 0xFF }
+GRAY       : sdl.Color : { 0x80, 0x80, 0x80, 0xFF }
+LIGHT_GRAY : sdl.Color : { 0xC0, 0xC0, 0xC0, 0xFF }
+WHITE      : sdl.Color : { 0xFF, 0xFF, 0xFF, 0xFF }
+
 Debug_Display :: struct {
 	video_textures: [2]^sdl.Texture,
 	glyph_texture:  ^sdl.Texture,
 	window:         ^sdl.Window,
 	renderer:       ^sdl.Renderer,
 }
-
-FONT_FILE        :: "./assets/LiberationMono-Regular.ttf"
-FONT_PT_SIZE     : f32 : 11.0
-FONT_HEIGHT      : f32 : 17.0
-FONT_WIDTH       : f32 : 9.0
-HALF_FONT_HEIGHT : f32 : FONT_HEIGHT / 2.0
-HALF_FONT_WIDTH  : f32 : FONT_WIDTH / 2.0
-FONT_DPI         : i32 : 96
 
 init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	display.window = sdl.CreateWindow("Chip-8 Debugger", 1024, 768, { .RESIZABLE, .MAXIMIZED })
@@ -111,27 +117,21 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 	sdl.DestroyWindow(display.window)
 }
 
-RGBA_BLACK      : sdl.Color : { 0x00, 0x00, 0x00, 0xFF }
-RGBA_DARK_GRAY  : sdl.Color : { 0x40, 0x40, 0x40, 0xFF }
-RGBA_GRAY       : sdl.Color : { 0x80, 0x80, 0x80, 0xFF }
-RGBA_LIGHT_GRAY : sdl.Color : { 0xC0, 0xC0, 0xC0, 0xFF }
-RGBA_WHITE      : sdl.Color : { 0xFF, 0xFF, 0xFF, 0xFF }
-
 button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: ^Mouse, mouse_lock_id: Mouse_Lock_Id) -> bool {
 	clicked := false
 
-	bg_color := RGBA_GRAY
-	fg_color := RGBA_BLACK
+	bg_color := GRAY
+	fg_color := BLACK
 
 	if mouse_in_rect(display.window, mouse^, rect^) && (!mouse.locked || mouse.lock_id == mouse_lock_id) {
 		if mouse.left {
-			bg_color = RGBA_DARK_GRAY
-			fg_color = RGBA_WHITE
+			bg_color = DARK_GRAY
+			fg_color = WHITE
 			mouse.locked = true
 			mouse.lock_id = mouse_lock_id
 			clicked = mouse.left_clicked
 		} else {
-			bg_color = RGBA_LIGHT_GRAY
+			bg_color = LIGHT_GRAY
 		}
 	} else if mouse.lock_id == mouse_lock_id {
 		mouse.lock_id = .None
@@ -154,7 +154,7 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: 
 	return clicked
 }
 
-draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, color: sdl.Color = RGBA_WHITE) {
+draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, color: sdl.Color = WHITE) {
 	sdl.SetTextureColorMod(display.glyph_texture, color.r, color.g, color.b)
 
 	source: sdl.FRect = { 0.0, 0.0, FONT_WIDTH, FONT_HEIGHT }
@@ -175,13 +175,13 @@ draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, co
 	}
 }
 
-render_horizontal_line :: proc(renderer: ^sdl.Renderer, position: sdl.FPoint, length: f32, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
+render_horizontal_line :: proc(renderer: ^sdl.Renderer, position: sdl.FPoint, length: f32, line_width: f32 = 2, color: sdl.Color = GRAY) {
 	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
 	rect: sdl.FRect = { position.x, position.y, length, line_width }
 	sdl.RenderFillRect(renderer, &rect)
 }
 
-render_rect_lines :: proc(renderer: ^sdl.Renderer, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = RGBA_GRAY) {
+render_rect_lines :: proc(renderer: ^sdl.Renderer, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = GRAY) {
 	rects: [4]sdl.FRect = {
 		sdl.FRect { rect.x, rect.y, rect.w, line_width },
 		sdl.FRect { rect.x + rect.w - line_width, rect.y + line_width, line_width, rect.h - 2 * line_width },
@@ -192,7 +192,7 @@ render_rect_lines :: proc(renderer: ^sdl.Renderer, rect: sdl.FRect, line_width: 
 	sdl.RenderFillRects(renderer, &rects[0], 4)
 }
 
-render_clear :: proc(renderer: ^sdl.Renderer, color: sdl.Color = RGBA_BLACK) {
+render_clear :: proc(renderer: ^sdl.Renderer, color: sdl.Color = BLACK) {
 	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
 	sdl.RenderClear(renderer)
 }
