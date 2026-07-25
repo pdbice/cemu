@@ -8,6 +8,7 @@ Mouse_Lock_Id :: enum {
 
 Mouse :: struct {
 	position:      sdl.FPoint,
+	lock_offset:   sdl.FPoint,
 	window:        ^sdl.Window,
 	lock_id:       Mouse_Lock_Id,
 	left:          bool,
@@ -37,4 +38,11 @@ update_mouse :: proc(mouse: ^Mouse) {
 
 mouse_in_rect :: #force_inline proc(window: ^sdl.Window, mouse: Mouse, rect: sdl.FRect) -> bool {
 	return mouse.window == window && sdl.PointInRectFloat(mouse.position, rect)
+}
+
+lock_mouse :: proc(mouse: ^Mouse, lock_id: Mouse_Lock_Id, rect: sdl.FRect) {
+	mouse.locked = true
+	mouse.lock_id = lock_id
+	mouse.lock_offset.x = mouse.position.x - rect.x
+	mouse.lock_offset.y = mouse.position.y - rect.y
 }
