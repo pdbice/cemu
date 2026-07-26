@@ -117,7 +117,7 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 	sdl.DestroyWindow(display.window)
 }
 
-button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: ^Mouse, mouse_lock_id: Mouse_Lock_Id) -> bool {
+button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: string, mouse: ^Mouse, mouse_lock_id: Mouse_Lock_Id) -> bool {
 	clicked := false
 
 	bg_color := GRAY
@@ -141,15 +141,10 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: []string, mouse: 
 	sdl.RenderFillRect(display.renderer, rect)
 
 	text_position: sdl.FPoint = {
-		0,
-		rect.y + (rect.h / 2) - (f32(len(text)) * HALF_FONT_HEIGHT),
+		rect.x + (rect.w / 2) - (f32(len(text)) * HALF_FONT_WIDTH),
+		rect.y + (rect.h / 2) - HALF_FONT_HEIGHT,
 	}
-	middle_x := rect.x + (rect.w / 2)
-	for line in text {
-		text_position.x = middle_x - f32(len(line)) * HALF_FONT_WIDTH
-		draw_text(display, line, text_position, fg_color)
-		text_position.y += FONT_HEIGHT
-	}
+	draw_text(display, text, text_position, fg_color)
 
 	return clicked
 }
