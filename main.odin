@@ -147,6 +147,9 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 
 		for sdl.PollEvent(&sdl_event) {
 			#partial switch sdl_event.type {
+			case .WINDOW_RESIZED:
+				debug_display.width = sdl_event.window.data1
+				debug_display.height = sdl_event.window.data2
 			case .QUIT:
 				return
 			case .KEY_DOWN:
@@ -160,6 +163,7 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 		update_mouse(&mouse)
 
 		render_clear(debug_display.renderer)
+		state_buttons := draw_debug_state_control(debug_display, &mouse)
 		sdl.RenderPresent(debug_display.renderer)
 	}
 }

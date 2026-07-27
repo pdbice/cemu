@@ -23,10 +23,16 @@ Debug_Display :: struct {
 	glyph_texture:  ^sdl.Texture,
 	window:         ^sdl.Window,
 	renderer:       ^sdl.Renderer,
+	width:          i32,
+	height:         i32,
 }
 
 Mouse_Lock_Id :: enum {
 	None,
+	Reset_Button,
+	Continue_Button,
+	Pause_Button,
+	Step_Button,
 }
 
 Mouse :: struct {
@@ -130,6 +136,19 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 	sdl.DestroyTexture(display.video_textures[0])
 	sdl.DestroyRenderer(display.renderer)
 	sdl.DestroyWindow(display.window)
+}
+
+draw_debug_state_control :: proc(display: Debug_Display, mouse: ^Mouse) -> [4]bool {
+	buttons: [4]bool
+
+	buttons[0] = button(display, &{  10.0, 10.0, 100.0, 34.0 }, "Reset", mouse, .Reset_Button)
+	buttons[1] = button(display, &{ 120.0, 10.0, 100.0, 34.0 }, "Continue", mouse, .Continue_Button)
+	buttons[2] = button(display, &{ 230.0, 10.0, 100.0, 34.0 }, "Pause", mouse, .Pause_Button)
+	buttons[3] = button(display, &{ 340.0, 10.0, 100.0, 34.0 }, "Step", mouse, .Step_Button)
+
+	render_horizontal_line(display.renderer, { 10.0, 54.0 }, f32(display.width) - 20.0)
+
+	return buttons
 }
 
 button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: string, mouse: ^Mouse, mouse_lock_id: Mouse_Lock_Id) -> bool {
