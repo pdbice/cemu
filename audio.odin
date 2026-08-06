@@ -17,7 +17,7 @@ Audio :: struct {
 }
 
 init_audio :: proc(audio: ^Audio) -> bool {
-	audio_spec: sdl.AudioSpec = {
+	audio_spec := sdl.AudioSpec {
 		.F32,
 		1,
 		i32(AUDIO_SAMPLE_RATE),

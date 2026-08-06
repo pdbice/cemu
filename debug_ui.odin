@@ -174,7 +174,7 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: string, mouse: ^M
 	sdl.SetRenderDrawColor(display.renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a)
 	sdl.RenderFillRect(display.renderer, rect)
 
-	text_position: sdl.FPoint = {
+	text_position := sdl.FPoint {
 		rect.x + (rect.w / 2) - (f32(len(text)) * HALF_FONT_WIDTH),
 		rect.y + (rect.h / 2) - HALF_FONT_HEIGHT,
 	}
@@ -186,8 +186,8 @@ button :: proc(display: Debug_Display, rect: ^sdl.FRect, text: string, mouse: ^M
 draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, color: sdl.Color = WHITE) {
 	sdl.SetTextureColorMod(display.glyph_texture, color.r, color.g, color.b)
 
-	source: sdl.FRect = { 0.0, 0.0, FONT_WIDTH, FONT_HEIGHT }
-	destination: sdl.FRect = { position.x, position.y, FONT_WIDTH, FONT_HEIGHT }
+	source := sdl.FRect { 0.0, 0.0, FONT_WIDTH, FONT_HEIGHT }
+	destination := sdl.FRect { position.x, position.y, FONT_WIDTH, FONT_HEIGHT }
 
 	for character in text {
 		if character == '\n' {
@@ -206,16 +206,16 @@ draw_text :: proc(display: Debug_Display, text: string, position: sdl.FPoint, co
 
 render_horizontal_line :: proc(renderer: ^sdl.Renderer, position: sdl.FPoint, length: f32, line_width: f32 = 2, color: sdl.Color = GRAY) {
 	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
-	rect: sdl.FRect = { position.x, position.y, length, line_width }
+	rect := sdl.FRect { position.x, position.y, length, line_width }
 	sdl.RenderFillRect(renderer, &rect)
 }
 
 render_rect_lines :: proc(renderer: ^sdl.Renderer, rect: sdl.FRect, line_width: f32 = 2, color: sdl.Color = GRAY) {
-	rects: [4]sdl.FRect = {
-		sdl.FRect { rect.x, rect.y, rect.w, line_width },
-		sdl.FRect { rect.x + rect.w - line_width, rect.y + line_width, line_width, rect.h - 2 * line_width },
-		sdl.FRect { rect.x, rect.y + rect.h - line_width, rect.w, line_width },
-		sdl.FRect { rect.x, rect.y + line_width, line_width, rect.h - 2 * line_width },
+	rects := [4]sdl.FRect {
+		{ rect.x, rect.y, rect.w, line_width },
+		{ rect.x + rect.w - line_width, rect.y + line_width, line_width, rect.h - 2 * line_width },
+		{ rect.x, rect.y + rect.h - line_width, rect.w, line_width },
+		{ rect.x, rect.y + line_width, line_width, rect.h - 2 * line_width },
 	}
 	sdl.SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a)
 	sdl.RenderFillRects(renderer, &rects[0], 4)
