@@ -139,12 +139,12 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 }
 
 draw_debug_state_control :: proc(display: Debug_Display, mouse: ^Mouse) -> [4]bool {
-	buttons: [4]bool
-
-	buttons[0] = button(display, &{  10, 10, 100, 34 }, "Reset", mouse, .Reset_Button)
-	buttons[1] = button(display, &{ 120, 10, 100, 34 }, "Continue", mouse, .Continue_Button)
-	buttons[2] = button(display, &{ 230, 10, 100, 34 }, "Pause", mouse, .Pause_Button)
-	buttons[3] = button(display, &{ 340, 10, 100, 34 }, "Step", mouse, .Step_Button)
+	buttons := [4]bool {
+		button(display, &{  10, 10, 100, 34 }, "Reset", mouse, .Reset_Button),
+		button(display, &{ 120, 10, 100, 34 }, "Continue", mouse, .Continue_Button),
+		button(display, &{ 230, 10, 100, 34 }, "Pause", mouse, .Pause_Button),
+		button(display, &{ 340, 10, 100, 34 }, "Step", mouse, .Step_Button),
+	}
 
 	render_horizontal_line(display.renderer, { 10.0, 54.0 }, f32(display.width) - 20.0)
 
