@@ -6,6 +6,15 @@ import "core:os"
 import "core:time"
 import sdl "vendor:sdl3"
 
+FPS_60_TICKS : i64 : 16666667
+
+Debug_State :: enum {
+	Paused,
+	Running,
+	Step,
+	Breakpoint,
+}
+
 main :: proc() {
 	when ODIN_DEBUG {
 		tracking_allocator: mem.Tracking_Allocator
@@ -57,8 +66,6 @@ main :: proc() {
 		main_loop(rom, variant)
 	}
 }
-
-FPS_60_TICKS : i64 : 16666667
 
 main_loop :: proc(rom: []u8, variant: Variant) {
 	video_display: Video_Display
@@ -140,6 +147,12 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 	load_rom(&vm, rom)
 	vm.variant = variant
 
+	debug_state: Debug_State
+	frame_elapsed: i64
+
+	frame_total: i64
+	frame_count: i64
+
 	for {
 		frame_start := time.tick_now()
 
@@ -163,8 +176,21 @@ main_debug_loop :: proc(rom: []u8, variant: Variant) {
 		update_mouse(&mouse)
 
 		render_clear(debug_display.renderer)
-		state_buttons := draw_debug_state_control(debug_display, &mouse)
+		state_buttons := draw_debug_state_control(debug_display, debug_state, frame_elapsed, &mouse)
 		sdl.RenderPresent(debug_display.renderer)
+		
+		//frame_elapsed = wait(FPS_60_TICKS, frame_start)
+		frame_elapsed = wait(1, frame_start)
+
+		if frame_count < 10000 {
+			frame_total += frame_elapsed
+			frame_count += 1
+		} else {
+			frame_average := f64(frame_total) / f64(frame_count)
+			frame_total = 0
+			frame_count = 0
+			fmt.println(1000000000 / frame_average)
+		}
 	}
 }
 

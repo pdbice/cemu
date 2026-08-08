@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:strconv"
 import sdl "vendor:sdl3"
 
 FONT_BMP_FILE    :: "./assets/text.bmp"
@@ -108,15 +109,30 @@ destroy_debug_display :: proc(display: ^Debug_Display) {
 	sdl.DestroyWindow(display.window)
 }
 
-draw_debug_state_control :: proc(display: Debug_Display, mouse: ^Mouse) -> [4]bool {
-	buttons := [4]bool {
-		button(display, &{  10, 10, 100, 34 }, "Reset", mouse, .Reset_Button),
-		button(display, &{ 120, 10, 100, 34 }, "Continue", mouse, .Continue_Button),
-		button(display, &{ 230, 10, 100, 34 }, "Pause", mouse, .Pause_Button),
-		button(display, &{ 340, 10, 100, 34 }, "Step", mouse, .Step_Button),
+draw_debug_state_control :: proc(display: Debug_Display, state: Debug_State, frame_time_ns: i64, mouse: ^Mouse) -> [4]bool {
+	#partial switch state {
+	case .Paused:     draw_text(display, "State: Paused", { 10, 10 })
+	case .Running:    draw_text(display, "State: Running", { 10, 10 })
+	case .Breakpoint: draw_text(display, "State: Breakpoint", { 10, 10 })
 	}
 
-	render_horizontal_line(display.renderer, { 10.0, 54.0 }, f32(display.width) - 20.0)
+	fps: f64
+	if frame_time_ns > 0 {
+		fps = 1000000000 / f64(frame_time_ns)
+	}
+	fps_buffer: [16]u8
+	strconv.write_float(fps_buffer[6:], fps, 'f', 0, 64)
+	copy(fps_buffer[:], "  FPS: ")
+	draw_text(display, string(fps_buffer[:]), { 10, 10 + FONT_HEIGHT })
+
+	buttons := [4]bool {
+		button(display, &{ 175, 10, 100, 34 }, "Reset", mouse, .Reset_Button),
+		button(display, &{ 285, 10, 100, 34 }, "Continue", mouse, .Continue_Button),
+		button(display, &{ 395, 10, 100, 34 }, "Pause", mouse, .Pause_Button),
+		button(display, &{ 505, 10, 100, 34 }, "Step", mouse, .Step_Button),
+	}
+
+	render_horizontal_line(display.renderer, { 10, 54 }, f32(display.width) - 20)
 
 	return buttons
 }
