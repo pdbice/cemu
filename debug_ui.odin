@@ -2,15 +2,12 @@ package main
 
 import "core:fmt"
 import sdl "vendor:sdl3"
-import "vendor:sdl3/ttf"
 
-FONT_FILE        :: "./assets/LiberationMono-Regular.ttf"
-FONT_DPI         : i32 : 96
-FONT_PT_SIZE     : f32 : 11.0
-FONT_HEIGHT      : f32 : 17.0
-FONT_WIDTH       : f32 : 9.0
-HALF_FONT_HEIGHT : f32 : FONT_HEIGHT / 2.0
-HALF_FONT_WIDTH  : f32 : FONT_WIDTH / 2.0
+FONT_BMP_FILE    :: "./assets/text.bmp"
+FONT_HEIGHT      : f32 : 17
+FONT_WIDTH       : f32 : 9
+HALF_FONT_HEIGHT : f32 : FONT_HEIGHT / 2
+HALF_FONT_WIDTH  : f32 : FONT_WIDTH / 2
 
 BLACK      : sdl.Color : { 0x00, 0x00, 0x00, 0xFF }
 DARK_GRAY  : sdl.Color : { 0x40, 0x40, 0x40, 0xFF }
@@ -79,36 +76,9 @@ init_debug_display :: proc(display: ^Debug_Display) -> bool {
 	}
 	sdl.SetTextureScaleMode(display.video_textures[1], .NEAREST)
 
-	if !ttf.Init() {
-		fmt.eprintfln("TTF Init error: %v", sdl.GetError())
-		sdl.DestroyTexture(display.video_textures[1])
-		sdl.DestroyTexture(display.video_textures[0])
-		sdl.DestroyRenderer(display.renderer)
-		sdl.DestroyWindow(display.window)
-		return false
-	}
-	defer ttf.Quit()
-
-	font := ttf.OpenFont(FONT_FILE, FONT_PT_SIZE)
-	if font == nil {
-		fmt.eprintfln("TTF OpenFont error: %v", sdl.GetError())
-		sdl.DestroyTexture(display.video_textures[1])
-		sdl.DestroyTexture(display.video_textures[0])
-		sdl.DestroyRenderer(display.renderer)
-		sdl.DestroyWindow(display.window)
-		return false
-	}
-	defer ttf.CloseFont(font)
-	ttf.SetFontSizeDPI(font, FONT_PT_SIZE, FONT_DPI, FONT_DPI)
-
-	glyph_string: [95]u8
-	for &glyph_character, glyph_index in glyph_string {
-		glyph_character = u8(glyph_index) + 32
-	}
-
-	glyph_surface := ttf.RenderText_Blended(font, cstring(&glyph_string[0]), 0, { 0xFF, 0xFF, 0xFF, 0xFF })
+	glyph_surface := sdl.LoadBMP(FONT_BMP_FILE)
 	if glyph_surface == nil {
-		fmt.eprintfln("TTF RenderText_Blended error: %v", sdl.GetError())
+		fmt.eprintfln("SDL LoadBMP error: %v", sdl.GetError())
 		sdl.DestroyTexture(display.video_textures[1])
 		sdl.DestroyTexture(display.video_textures[0])
 		sdl.DestroyRenderer(display.renderer)
