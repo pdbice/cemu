@@ -9,13 +9,6 @@ import sdl "vendor:sdl3"
 FPS_60_TICKS : i64 : 16666667
 
 main :: proc() {
-	when ODIN_DEBUG {
-		tracking_allocator: mem.Tracking_Allocator
-		mem.tracking_allocator_init(&tracking_allocator, context.allocator)
-		context.allocator = mem.tracking_allocator(&tracking_allocator)
-		defer check_tracking_allocator(&tracking_allocator)
-	}
-
 	if len(os.args) < 2 {
 		usage()
 		return
@@ -44,16 +37,16 @@ main :: proc() {
 	}
 	defer delete(rom)
 
+	main_loop(rom, variant)
+}
+
+main_loop :: proc(rom: []u8, variant: Variant) {
 	if !sdl.Init({ .VIDEO, .AUDIO }) {
 		fmt.eprintfln("SDL Init error: %v", sdl.GetError())
 		return
 	}
 	defer sdl.Quit()
 
-	main_loop(rom, variant)
-}
-
-main_loop :: proc(rom: []u8, variant: Variant) {
 	video_display: Video_Display
 	if !init_video_display(&video_display) {
 		return
@@ -133,14 +126,4 @@ usage :: proc() {
 	fmt.println("\t\t\t-variant:modern\tThe modern interpretation of the super chip variant")
 	fmt.println("\t\t\t-variant:cosmac\tThe Chip-8 variant used by the Cosmac VIP")
 	fmt.println()
-}
-
-check_tracking_allocator :: proc(tracking_allocator: ^mem.Tracking_Allocator) {
-	if len(tracking_allocator.allocation_map) > 0 {
-		fmt.eprintfln("%v allocations not freed:", len(tracking_allocator.allocation_map))
-		for _, entry in tracking_allocator.allocation_map {
-			fmt.eprintfln("- %v bytes @ %v", entry.size, entry.location)
-		}
-	}
-	mem.tracking_allocator_destroy(tracking_allocator)
 }
