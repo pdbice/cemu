@@ -8,13 +8,6 @@ import sdl "vendor:sdl3"
 
 FPS_60_TICKS : i64 : 16666667
 
-Debug_State :: enum {
-	Paused,
-	Running,
-	Step,
-	Breakpoint,
-}
-
 main :: proc() {
 	when ODIN_DEBUG {
 		tracking_allocator: mem.Tracking_Allocator
@@ -28,14 +21,11 @@ main :: proc() {
 		return
 	}
 
-	debug := false
 	variant: Variant
 
 	if len(os.args) > 2 {
 		for argument in os.args[2:] {
 			switch argument {
-			case "-debug":
-				debug = true
 			case "-variant:modern":
 				variant = .Superchip_Modern
 			case "-variant:cosmac":
@@ -60,11 +50,7 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
-	if debug {
-		main_debug_loop(rom, variant)
-	} else {
-		main_loop(rom, variant)
-	}
+	main_loop(rom, variant)
 }
 
 main_loop :: proc(rom: []u8, variant: Variant) {
@@ -128,72 +114,6 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 	}
 }
 
-main_debug_loop :: proc(rom: []u8, variant: Variant) {
-	debug_display: Debug_Display
-	if !init_debug_display(&debug_display) {
-		return
-	}
-	defer destroy_debug_display(&debug_display)
-
-	audio: Audio
-	if !init_audio(&audio) {
-		return
-	}
-	defer sdl.DestroyAudioStream(audio.stream)
-
-	mouse: Mouse
-
-	vm: Virtual_Machine
-	load_rom(&vm, rom)
-	vm.variant = variant
-
-	debug_state: Debug_State
-	frame_elapsed: i64
-
-	frame_total: i64
-	frame_count: i64
-
-	for {
-		frame_start := time.tick_now()
-
-		sdl_event: sdl.Event
-
-		for sdl.PollEvent(&sdl_event) {
-			#partial switch sdl_event.type {
-			case .WINDOW_RESIZED:
-				debug_display.width = sdl_event.window.data1
-				debug_display.height = sdl_event.window.data2
-			case .QUIT:
-				return
-			case .KEY_DOWN:
-				#partial switch sdl_event.key.scancode {
-				case .ESCAPE:
-					return
-				}
-			}
-		}
-
-		update_mouse(&mouse)
-
-		render_clear(debug_display.renderer)
-		state_buttons := draw_debug_state_control(debug_display, debug_state, frame_elapsed, &mouse)
-		sdl.RenderPresent(debug_display.renderer)
-		
-		//frame_elapsed = wait(FPS_60_TICKS, frame_start)
-		frame_elapsed = wait(1, frame_start)
-
-		if frame_count < 10000 {
-			frame_total += frame_elapsed
-			frame_count += 1
-		} else {
-			frame_average := f64(frame_total) / f64(frame_count)
-			frame_total = 0
-			frame_count = 0
-			fmt.println(1000000000 / frame_average)
-		}
-	}
-}
-
 wait :: proc(target: i64, start: time.Tick) -> i64 {
 	elapsed: i64
 	for elapsed < target {
@@ -208,8 +128,6 @@ usage :: proc() {
 	fmt.println()
 	fmt.println("\tFlags")
 	fmt.println()
-	fmt.println("\t-debug")
-	fmt.println("\t\tRun emulator in debug mode")
 	fmt.println("\t-variant:<variant>")
 	fmt.println("\t\tSelects the Chip-8 variant to use")
 	fmt.println("\t\t\t-variant:modern\tThe modern interpretation of the super chip variant")
