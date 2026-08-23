@@ -67,7 +67,6 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 		frame_start := time.tick_now()
 
 		sdl_event: sdl.Event
-
 		for sdl.PollEvent(&sdl_event) {
 			#partial switch sdl_event.type {
 			case .QUIT:
