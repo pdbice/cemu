@@ -6,7 +6,15 @@ import "core:os"
 import "core:time"
 import sdl "vendor:sdl3"
 
-FPS_60_TICKS : i64 : 16666667
+DISPLAY_FOREGROUND :: 0xFF808080
+DISPLAY_BACKGROUND :: 0xFF000000
+
+FPS_60_DURATION : time.Duration : 16666667
+
+Display :: struct {
+	video_textures: [2]^sdl.Texture,
+	renderer:       ^sdl.Renderer,
+}
 
 main :: proc() {
 	if len(os.args) < 2 {
@@ -37,22 +45,48 @@ main :: proc() {
 	}
 	defer delete(rom)
 
-	main_loop(rom, variant)
-}
+	display: Display
 
-main_loop :: proc(rom: []u8, variant: Variant) {
 	if !sdl.Init({ .VIDEO, .AUDIO }) {
 		fmt.eprintfln("SDL Init error: %v", sdl.GetError())
 		return
 	}
 	defer sdl.Quit()
 
-	video_display: Video_Display
-	if !init_video_display(&video_display) {
+	window := sdl.CreateWindow("Chip-8", 1024, 512, { .RESIZABLE })
+	if window == nil {
+		fmt.eprintfln("SDL CreateWindow error: %v", sdl.GetError())
 		return
 	}
-	defer destroy_video_display(&video_display)
+	defer sdl.DestroyWindow(window)
 
+	display.renderer = sdl.CreateRenderer(window, nil)
+	if display.renderer == nil {
+		fmt.eprintfln("SDL CreateRenderer error: %v", sdl.GetError())
+		return
+	}
+	defer sdl.DestroyRenderer(display.renderer)
+
+	display.video_textures[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
+	if display.video_textures[0] == nil {
+		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
+		return
+	}
+	defer sdl.DestroyTexture(display.video_textures[0])
+	sdl.SetTextureScaleMode(display.video_textures[0], .NEAREST)
+
+	display.video_textures[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
+	if display.video_textures[1] == nil {
+		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
+		return
+	}
+	defer sdl.DestroyTexture(display.video_textures[1])
+	sdl.SetTextureScaleMode(display.video_textures[1], .NEAREST)
+
+	main_loop(rom, variant, display)
+}
+
+main_loop :: proc(rom: []u8, variant: Variant, display: Display) {
 	audio: Audio
 	if !init_audio(&audio) {
 		return
@@ -63,6 +97,7 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 	load_rom(&vm, rom)
 	vm.variant = variant
 
+	frame_duration: time.Duration
 	for {
 		frame_start := time.tick_now()
 
@@ -100,18 +135,35 @@ main_loop :: proc(rom: []u8, variant: Variant) {
 			sdl.PauseAudioStreamDevice(audio.stream)
 		}
 
-		draw_video_display(video_display, vm.video)
+		pitch: i32
+		pixels: [^]u32
 
-		wait(FPS_60_TICKS, frame_start)
-	}
-}
+		texture: ^sdl.Texture
+		if vm.video.length == 2048 {
+			texture = display.video_textures[0]
+		} else {
+			texture = display.video_textures[1]
+		}
 
-wait :: proc(target: i64, start: time.Tick) -> i64 {
-	elapsed: i64
-	for elapsed < target {
-		elapsed = time.tick_now()._nsec - start._nsec
+		sdl.LockTexture(texture, nil, cast(^rawptr)&pixels, &pitch)
+
+		for pixel_index in 0..<vm.video.length {
+			if vm.video.framebuffer[pixel_index] == 1{
+				pixels[pixel_index] = DISPLAY_FOREGROUND
+			} else {
+				pixels[pixel_index] = DISPLAY_BACKGROUND
+			}
+		}
+
+		sdl.UnlockTexture(texture)
+		sdl.RenderTexture(display.renderer, texture, nil, nil)
+		sdl.RenderPresent(display.renderer)
+
+		frame_duration = 0
+		for frame_duration < FPS_60_DURATION {
+			frame_duration = time.tick_since(frame_start)
+		}
 	}
-	return elapsed
 }
 
 usage :: proc() {
