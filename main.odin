@@ -131,24 +131,65 @@ main_loop :: proc(rom: []u8, variant: Variant, display: Display, audio: ^Audio) 
 	for {
 		frame_start := time.tick_now()
 
+		vm.keypad.key_released = false
+
 		sdl_event: sdl.Event
 		for sdl.PollEvent(&sdl_event) {
 			#partial switch sdl_event.type {
 			case .QUIT:
 				return
-			case .KEY_DOWN:
+			case .KEY_UP:
+				keypad_key_released :: proc(keypad: ^Keypad, keypad_key: u8) {
+					keypad.state[keypad_key] = false
+					keypad.wait_key = keypad_key
+					keypad.key_released = true
+				}
 				#partial switch sdl_event.key.scancode {
-				case .ESCAPE:
-					return
 				case .F4:
 					mem.zero(&vm, size_of(Virtual_Machine))
 					load_rom(&vm, rom)
 					vm.variant = variant
+				case  .X: keypad_key_released(&vm.keypad, 0)
+				case ._1: keypad_key_released(&vm.keypad, 1)
+				case ._2: keypad_key_released(&vm.keypad, 2)
+				case ._3: keypad_key_released(&vm.keypad, 3)
+				case  .Q: keypad_key_released(&vm.keypad, 4)
+				case  .W: keypad_key_released(&vm.keypad, 5)
+				case  .E: keypad_key_released(&vm.keypad, 6)
+				case  .A: keypad_key_released(&vm.keypad, 7)
+				case  .S: keypad_key_released(&vm.keypad, 8)
+				case  .D: keypad_key_released(&vm.keypad, 9)
+				case  .Z: keypad_key_released(&vm.keypad, 10)
+				case  .C: keypad_key_released(&vm.keypad, 11)
+				case ._4: keypad_key_released(&vm.keypad, 12)
+				case  .R: keypad_key_released(&vm.keypad, 13)
+				case  .F: keypad_key_released(&vm.keypad, 14)
+				case  .V: keypad_key_released(&vm.keypad, 15)
+				}
+			case .KEY_DOWN:
+				#partial switch sdl_event.key.scancode {
+				case .ESCAPE:
+					return
+				case  .X: vm.keypad.state[ 0] = true
+				case ._1: vm.keypad.state[ 1] = true
+				case ._2: vm.keypad.state[ 2] = true
+				case ._3: vm.keypad.state[ 3] = true
+				case  .Q: vm.keypad.state[ 4] = true
+				case  .W: vm.keypad.state[ 5] = true
+				case  .E: vm.keypad.state[ 6] = true
+				case  .A: vm.keypad.state[ 7] = true
+				case  .S: vm.keypad.state[ 8] = true
+				case  .D: vm.keypad.state[ 9] = true
+				case  .Z: vm.keypad.state[10] = true
+				case  .C: vm.keypad.state[11] = true
+				case ._4: vm.keypad.state[12] = true
+				case  .R: vm.keypad.state[13] = true
+				case  .F: vm.keypad.state[14] = true
+				case  .V: vm.keypad.state[15] = true
 				}
 			}
 		}
 
-		update_keypad(&vm.keypad)
 		vm.vblank_interrupt = false
 
 		for instructions_per_frame in 0..<12 {
