@@ -7,6 +7,13 @@ import "core:os"
 import "core:time"
 import sdl "vendor:sdl3"
 
+WINDOW_WIDTH           :: 1024
+WINDOW_HEIGHT          :: 512
+LOW_RESOLUTION_WIDTH   :: 64
+LOW_RESOLUTION_HEIGHT  :: 32
+HIGH_RESOLUTION_WIDTH  :: 128
+HIGH_RESOLUTION_HEIGHT :: 64
+
 AUDIO_BUFFER_LENGTH : i32 : 2000
 AUDIO_BUFFER_SIZE   : i32 : AUDIO_BUFFER_LENGTH * size_of(f32)
 AUDIO_SAMPLE_RATE   : f32 : 44100
@@ -66,7 +73,7 @@ main :: proc() {
 	}
 	defer sdl.Quit()
 
-	window := sdl.CreateWindow("Chip-8", 1024, 512, { .RESIZABLE })
+	window := sdl.CreateWindow("Chip-8", WINDOW_WIDTH, WINDOW_HEIGHT, { .RESIZABLE })
 	if window == nil {
 		fmt.eprintfln("SDL CreateWindow error: %v", sdl.GetError())
 		return
@@ -80,7 +87,7 @@ main :: proc() {
 	}
 	defer sdl.DestroyRenderer(display.renderer)
 
-	display.video_textures[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 64, 32)
+	display.video_textures[0] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, LOW_RESOLUTION_WIDTH, LOW_RESOLUTION_HEIGHT)
 	if display.video_textures[0] == nil {
 		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
 		return
@@ -88,7 +95,7 @@ main :: proc() {
 	defer sdl.DestroyTexture(display.video_textures[0])
 	sdl.SetTextureScaleMode(display.video_textures[0], .NEAREST)
 
-	display.video_textures[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, 128, 64)
+	display.video_textures[1] = sdl.CreateTexture(display.renderer, .ARGB8888, .STREAMING, HIGH_RESOLUTION_WIDTH, HIGH_RESOLUTION_HEIGHT)
 	if display.video_textures[1] == nil {
 		fmt.eprintfln("SDL CreateTexture error: %v", sdl.GetError())
 		return
